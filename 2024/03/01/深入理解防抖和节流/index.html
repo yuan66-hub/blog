@@ -1,0 +1,183 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>深入理解防抖和节流 | 前端山海经</title><meta name="author" content="jianmingYuan"><meta name="copyright" content="jianmingYuan"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="概述防抖和节流是前端开发中常用的函数优化手段，它们可以限制函数的执行频率，提升性能和用户体验。主要用于处理高频触发的事件，例如：用户的滚动、输入、点击和表单的重复提交等。 防抖与节流的区别先简单描述下它们的作用  防抖：如果一个函数持续地、频繁地触发，那么只在它结束后过一段时间才开始执行。换句话说，如果你持续触发事件，那么防抖函数将不会执行，只有当你停止触发事件后，它才会在指定的延迟时间后执行。这">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深入理解防抖和节流">
+<meta property="og:url" content="http://example.com/2024/03/01/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E9%98%B2%E6%8A%96%E5%92%8C%E8%8A%82%E6%B5%81/index.html">
+<meta property="og:site_name" content="前端山海经">
+<meta property="og:description" content="概述防抖和节流是前端开发中常用的函数优化手段，它们可以限制函数的执行频率，提升性能和用户体验。主要用于处理高频触发的事件，例如：用户的滚动、输入、点击和表单的重复提交等。 防抖与节流的区别先简单描述下它们的作用  防抖：如果一个函数持续地、频繁地触发，那么只在它结束后过一段时间才开始执行。换句话说，如果你持续触发事件，那么防抖函数将不会执行，只有当你停止触发事件后，它才会在指定的延迟时间后执行。这">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://i.loli.net/2020/05/01/gkihqEjXxJ5UZ1C.jpg">
+<meta property="article:published_time" content="2024-03-01T08:47:56.000Z">
+<meta property="article:modified_time" content="2024-03-01T08:55:04.558Z">
+<meta property="article:author" content="jianmingYuan">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://i.loli.net/2020/05/01/gkihqEjXxJ5UZ1C.jpg"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="http://example.com/2024/03/01/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E9%98%B2%E6%8A%96%E5%92%8C%E8%8A%82%E6%B5%81/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":true,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"找不到您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'mediumZoom',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: true,
+  islazyload: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '深入理解防抖和节流',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2024-03-01 16:55:04'
+}</script><script>(win=>{
+      win.saveToLocal = {
+        set: (key, value, ttl) => {
+          if (ttl === 0) return
+          const now = Date.now()
+          const expiry = now + ttl * 86400000
+          const item = {
+            value,
+            expiry
+          }
+          localStorage.setItem(key, JSON.stringify(item))
+        },
+      
+        get: key => {
+          const itemStr = localStorage.getItem(key)
+      
+          if (!itemStr) {
+            return undefined
+          }
+          const item = JSON.parse(itemStr)
+          const now = Date.now()
+      
+          if (now > item.expiry) {
+            localStorage.removeItem(key)
+            return undefined
+          }
+          return item.value
+        }
+      }
+    
+      win.getScript = (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        script.onerror = reject
+        script.onload = script.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          script.onload = script.onreadystatechange = null
+          resolve()
+        }
+
+        Object.keys(attr).forEach(key => {
+          script.setAttribute(key, attr[key])
+        })
+
+        document.head.appendChild(script)
+      })
+    
+      win.getCSS = (url, id = false) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onerror = reject
+        link.onload = link.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          link.onload = link.onreadystatechange = null
+          resolve()
+        }
+        document.head.appendChild(link)
+      })
+    
+      win.activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+        if (t === 'dark') activateDarkMode()
+        else if (t === 'light') activateLightMode()
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+      const detectApple = () => {
+        if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+          document.documentElement.classList.add('apple')
+        }
+      }
+      detectApple()
+    })(window)</script><meta name="generator" content="Hexo 7.1.1"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="https://i.loli.net/2021/02/24/5O1day2nriDzjSu.png" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">7</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">0</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">0</div></a></div><hr class="custom-hr"/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg fixed" id="page-header" style="background-image: url('https://i.loli.net/2020/05/01/gkihqEjXxJ5UZ1C.jpg')"><nav id="nav"><span id="blog-info"><a href="/" title="前端山海经"><span class="site-name">前端山海经</span></a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search" href="javascript:void(0);"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);"><i class="fas fa-bars fa-fw"></i></a></div></div></nav><div id="post-info"><h1 class="post-title">深入理解防抖和节流</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-03-01T08:47:56.000Z" title="发表于 2024-03-01 16:47:56">2024-03-01</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2024-03-01T08:55:04.558Z" title="更新于 2024-03-01 16:55:04">2024-03-01</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="深入理解防抖和节流"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container"><h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><p><code>防抖</code>和<code>节流</code>是前端开发中常用的函数优化手段，它们可以限制函数的执行频率，提升性能和用户体验。主要用于处理高频触发的事件，例如：用户的滚动、输入、点击和表单的重复提交等。</p>
+<h1 id="防抖与节流的区别"><a href="#防抖与节流的区别" class="headerlink" title="防抖与节流的区别"></a>防抖与节流的区别</h1><p>先简单描述下它们的作用</p>
+<ul>
+<li><p>防抖：如果一个函数持续地、频繁地触发，那么只在它结束后过一段时间才开始执行。换句话说，如果你持续触发事件，那么防抖函数将不会执行，只有当你停止触发事件后，它才会在指定的延迟时间后执行。这对于防止例如用户在输入框中连续输入时发送过多的Ajax请求等情况非常有用。</p>
+</li>
+<li><p>节流：如果你持续触发事件，每隔一段时间，事件处理函数只执行一次。这有助于限制一些处理函数的执行频率，例如：滚动事件、窗口大小调整事件等。</p>
+</li>
+</ul>
+<p>简而言之，防抖是在事件停止触发后延迟执行函数，而节流是按照固定的时间间隔执行函数。</p>
+<p>因为<code>防抖</code>和<code>节流</code>的作用和应用场景基本相同，也就导致它们容易被混淆。</p>
+<h2 id="防抖的实现与使用"><a href="#防抖的实现与使用" class="headerlink" title="防抖的实现与使用"></a><strong>防抖的实现与使用</strong></h2><p>防抖的应用场景：</p>
+<ol>
+<li>输入框搜索：当用户在搜索框中输入关键字时，使用防抖可以避免频繁发送搜索请求，而是在用户停止输入一段时间后才发送请求，减轻服务器压力。</li>
+<li>按钮点击：当用户点击按钮时，使用防抖可以避免用户多次点击造成的多次提交或重复操作。</li>
+</ol>
+<p>实现防抖的基本方式是利用定时器，每次触发事件时都清除上一次的定时器，然后重新设置一个新的定时器。</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;!DOCTYPE <span class="keyword">html</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">html</span> <span class="attr">lang</span>=<span class="string">&quot;en&quot;</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">head</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">meta</span> <span class="attr">charset</span>=<span class="string">&quot;UTF-8&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">meta</span> <span class="attr">name</span>=<span class="string">&quot;viewport&quot;</span> <span class="attr">content</span>=<span class="string">&quot;width=device-width, initial-scale=1.0&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">title</span>&gt;</span>Document<span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">button</span> <span class="attr">id</span>=<span class="string">&quot;btn&quot;</span>&gt;</span>按钮<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">       </span></span><br><span class="line"><span class="language-javascript">        <span class="comment">// 防抖函数  </span></span></span><br><span class="line"><span class="language-javascript">        <span class="keyword">function</span> <span class="title function_">debounce</span>(<span class="params">func, wait</span>) &#123;  </span></span><br><span class="line"><span class="language-javascript">            <span class="keyword">let</span> timeout;  </span></span><br><span class="line"><span class="language-javascript">            <span class="keyword">return</span> <span class="keyword">function</span> (<span class="params">...args</span>) &#123;  </span></span><br><span class="line"><span class="language-javascript">                <span class="keyword">const</span> context = <span class="variable language_">this</span>;  </span></span><br><span class="line"><span class="language-javascript">                <span class="built_in">clearTimeout</span>(timeout);  </span></span><br><span class="line"><span class="language-javascript">                timeout = <span class="built_in">setTimeout</span>(<span class="function">() =&gt;</span> func.<span class="title function_">apply</span>(context, args), wait);  </span></span><br><span class="line"><span class="language-javascript">            &#125;;  </span></span><br><span class="line"><span class="language-javascript">        &#125;  </span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">        <span class="comment">// 使用防抖函数控制连续触发事件的处理函数执行频率  </span></span></span><br><span class="line"><span class="language-javascript">        <span class="keyword">const</span> debouncedHandler = <span class="title function_">debounce</span>(<span class="function">() =&gt;</span> &#123;  </span></span><br><span class="line"><span class="language-javascript">            <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;Debounced event triggered&#x27;</span>);  </span></span><br><span class="line"><span class="language-javascript">        &#125;, <span class="number">500</span>);  </span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">        <span class="variable language_">document</span>.<span class="title function_">getElementById</span>(<span class="string">&#x27;btn&#x27;</span>).<span class="title function_">addEventListener</span>(<span class="string">&#x27;click&#x27;</span>,debouncedHandler)</span></span><br><span class="line"><span class="language-javascript">    </span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">html</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h1 id="节流的实现与使用"><a href="#节流的实现与使用" class="headerlink" title="节流的实现与使用"></a>节流的实现与使用</h1><p>节流的应用场景：</p>
+<ol>
+<li>页面滚动：当页面滚动时，使用节流可以限制滚动事件的触发频率，减少事件处理的次数，提高页面的响应性能。</li>
+<li>按钮点击：当用户点击按钮时，使用节流可以减少事件处理的次数，避免过于频繁的操作。</li>
+</ol>
+<p>实现节流的方式也是利用定时器，但与防抖不同的是，节流会保证在一个固定的时间间隔内至少执行一次事件处理函数。</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;!DOCTYPE <span class="keyword">html</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">html</span> <span class="attr">lang</span>=<span class="string">&quot;en&quot;</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">head</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">meta</span> <span class="attr">charset</span>=<span class="string">&quot;UTF-8&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">meta</span> <span class="attr">name</span>=<span class="string">&quot;viewport&quot;</span> <span class="attr">content</span>=<span class="string">&quot;width=device-width, initial-scale=1.0&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">title</span>&gt;</span>Document<span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">button</span> <span class="attr">id</span>=<span class="string">&quot;btn&quot;</span>&gt;</span>按钮<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">       </span></span><br><span class="line"><span class="language-javascript">       <span class="comment">// 节流函数  </span></span></span><br><span class="line"><span class="language-javascript">        <span class="keyword">function</span> <span class="title function_">throttle</span>(<span class="params">func, limit</span>) &#123;  </span></span><br><span class="line"><span class="language-javascript">            <span class="keyword">let</span> inThrottle;  </span></span><br><span class="line"><span class="language-javascript">            <span class="keyword">return</span> <span class="keyword">function</span> (<span class="params">...args</span>) &#123;  </span></span><br><span class="line"><span class="language-javascript">                <span class="keyword">const</span> context = <span class="variable language_">this</span>;  </span></span><br><span class="line"><span class="language-javascript">                <span class="keyword">if</span> (!inThrottle) &#123;  </span></span><br><span class="line"><span class="language-javascript">                func.<span class="title function_">apply</span>(context, args);  </span></span><br><span class="line"><span class="language-javascript">                inThrottle = <span class="literal">true</span>;  </span></span><br><span class="line"><span class="language-javascript">                <span class="built_in">setTimeout</span>(<span class="function">() =&gt;</span> inThrottle = <span class="literal">false</span>, limit);  </span></span><br><span class="line"><span class="language-javascript">                &#125;  </span></span><br><span class="line"><span class="language-javascript">            &#125;;  </span></span><br><span class="line"><span class="language-javascript">        &#125;</span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">        <span class="comment">// 使用节流函数控制连续触发事件的处理函数执行频率  </span></span></span><br><span class="line"><span class="language-javascript">        <span class="keyword">const</span> throttledHandler = <span class="title function_">throttle</span>(<span class="function">() =&gt;</span> &#123;  </span></span><br><span class="line"><span class="language-javascript">            <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;Throttled event triggered&#x27;</span>);  </span></span><br><span class="line"><span class="language-javascript">        &#125;, <span class="number">1000</span>);</span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">        <span class="variable language_">document</span>.<span class="title function_">getElementById</span>(<span class="string">&#x27;btn&#x27;</span>).<span class="title function_">addEventListener</span>(<span class="string">&#x27;click&#x27;</span>,throttledHandler)</span></span><br><span class="line"><span class="language-javascript">    </span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">html</span>&gt;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>在实际的前端开发中，防抖和节流的使用场景非常广泛。例如：搜索框的实时搜索建议可以使用防抖来减少服务器请求；滚动加载更多数据可以使用节流来防止在短时间内发送过多的请求。通过使用这两种技术，我们可以有效地优化前端的性能，提升用户体验。</p>
+<p>本文转自 <a target="_blank" rel="noopener" href="https://juejin.cn/post/7324522555268366351?searchId=202403011646443E84D49F22E455869CE8">https://juejin.cn/post/7324522555268366351?searchId=202403011646443E84D49F22E455869CE8</a>，如有侵权，请联系删除。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="http://example.com">jianmingYuan</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="http://example.com/2024/03/01/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E9%98%B2%E6%8A%96%E5%92%8C%E8%8A%82%E6%B5%81/">http://example.com/2024/03/01/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E9%98%B2%E6%8A%96%E5%92%8C%E8%8A%82%E6%B5%81/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="http://example.com" target="_blank">前端山海经</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"></div><div class="post_share"><div class="social-share" data-image="https://i.loli.net/2020/05/01/gkihqEjXxJ5UZ1C.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2024/03/01/js%E5%A6%82%E4%BD%95%E7%AE%A1%E7%90%86%E5%86%85%E5%AD%98/" title="js如何管理内存"><img class="cover" src="https://i.loli.net/2020/05/01/gkihqEjXxJ5UZ1C.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">js如何管理内存</div></div></a></div><div class="next-post pull-right"><a href="/2024/03/01/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%E5%85%A5%E9%97%A8/" title="神经网络入门"><img class="cover" src="https://i.loli.net/2020/05/01/gkihqEjXxJ5UZ1C.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">神经网络入门</div></div></a></div></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="https://i.loli.net/2021/02/24/5O1day2nriDzjSu.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">jianmingYuan</div><div class="author-info__description">野生技术爱好者</div></div><div class="card-info-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">7</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">0</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">0</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/xxxxxx"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%A6%82%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text">概述</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%98%B2%E6%8A%96%E4%B8%8E%E8%8A%82%E6%B5%81%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="toc-number">2.</span> <span class="toc-text">防抖与节流的区别</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%98%B2%E6%8A%96%E7%9A%84%E5%AE%9E%E7%8E%B0%E4%B8%8E%E4%BD%BF%E7%94%A8"><span class="toc-number">2.1.</span> <span class="toc-text">防抖的实现与使用</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%8A%82%E6%B5%81%E7%9A%84%E5%AE%9E%E7%8E%B0%E4%B8%8E%E4%BD%BF%E7%94%A8"><span class="toc-number">3.</span> <span class="toc-text">节流的实现与使用</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">4.</span> <span class="toc-text">总结</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2024/03/01/js%E5%A6%82%E4%BD%95%E7%AE%A1%E7%90%86%E5%86%85%E5%AD%98/" title="js如何管理内存"><img src="https://i.loli.net/2020/05/01/gkihqEjXxJ5UZ1C.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="js如何管理内存"/></a><div class="content"><a class="title" href="/2024/03/01/js%E5%A6%82%E4%BD%95%E7%AE%A1%E7%90%86%E5%86%85%E5%AD%98/" title="js如何管理内存">js如何管理内存</a><time datetime="2024-03-01T09:27:53.000Z" title="发表于 2024-03-01 17:27:53">2024-03-01</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2024/03/01/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E9%98%B2%E6%8A%96%E5%92%8C%E8%8A%82%E6%B5%81/" title="深入理解防抖和节流"><img src="https://i.loli.net/2020/05/01/gkihqEjXxJ5UZ1C.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="深入理解防抖和节流"/></a><div class="content"><a class="title" href="/2024/03/01/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E9%98%B2%E6%8A%96%E5%92%8C%E8%8A%82%E6%B5%81/" title="深入理解防抖和节流">深入理解防抖和节流</a><time datetime="2024-03-01T08:47:56.000Z" title="发表于 2024-03-01 16:47:56">2024-03-01</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2024/03/01/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%E5%85%A5%E9%97%A8/" title="神经网络入门"><img src="https://i.loli.net/2020/05/01/gkihqEjXxJ5UZ1C.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="神经网络入门"/></a><div class="content"><a class="title" href="/2024/03/01/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%E5%85%A5%E9%97%A8/" title="神经网络入门">神经网络入门</a><time datetime="2024-03-01T07:04:38.000Z" title="发表于 2024-03-01 15:04:38">2024-03-01</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2024/02/29/%E5%A6%82%E4%BD%95%E5%8C%BA%E5%88%AB%E8%BF%9B%E7%A8%8B%E5%92%8C%E7%BA%BF%E7%A8%8B%E3%80%81%E5%8D%8F%E7%A8%8B%E7%9A%84%E5%85%B3%E7%B3%BB/" title="如何区别进程和线程、协程的关系"><img src="https://i.loli.net/2020/05/01/gkihqEjXxJ5UZ1C.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="如何区别进程和线程、协程的关系"/></a><div class="content"><a class="title" href="/2024/02/29/%E5%A6%82%E4%BD%95%E5%8C%BA%E5%88%AB%E8%BF%9B%E7%A8%8B%E5%92%8C%E7%BA%BF%E7%A8%8B%E3%80%81%E5%8D%8F%E7%A8%8B%E7%9A%84%E5%85%B3%E7%B3%BB/" title="如何区别进程和线程、协程的关系">如何区别进程和线程、协程的关系</a><time datetime="2024-02-29T04:10:57.000Z" title="发表于 2024-02-29 12:10:57">2024-02-29</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2024/02/22/%E4%BD%A0%E4%B8%8D%E7%9F%A5%E9%81%93%E7%9A%84%20CSS%20%E4%B9%8B%E5%8C%85%E5%90%AB%E5%9D%97/" title="你不知道的 CSS 之包含块"><img src="https://i.loli.net/2020/05/01/gkihqEjXxJ5UZ1C.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="你不知道的 CSS 之包含块"/></a><div class="content"><a class="title" href="/2024/02/22/%E4%BD%A0%E4%B8%8D%E7%9F%A5%E9%81%93%E7%9A%84%20CSS%20%E4%B9%8B%E5%8C%85%E5%90%AB%E5%9D%97/" title="你不知道的 CSS 之包含块">你不知道的 CSS 之包含块</a><time datetime="2024-02-22T10:31:21.000Z" title="发表于 2024-02-22 18:31:21">2024-02-22</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2020 - 2024 By jianmingYuan</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/medium-zoom/dist/medium-zoom.min.js"></script><div class="js-pjax"></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js"></script></div></div></body></html>
