@@ -1,0 +1,21 @@
+diff --git a/node_modules/hexo-admin/api.js b/node_modules/hexo-admin/api.js
+index 43dde8d..cc5cd09 100644
+--- a/node_modules/hexo-admin/api.js
++++ b/node_modules/hexo-admin/api.js
+@@ -41,7 +41,7 @@ module.exports = function (app, hexo) {
+       fs.writeFile(hexo.base_dir+'_admin-config.yml', '')
+       return {}
+     } else {
+-      var settings = yml.safeLoad(fs.readFileSync(path))
++      var settings = yml.load(fs.readFileSync(path))
+ 
+       if (!settings) return {}
+       return settings
+@@ -150,6 +150,7 @@ module.exports = function (app, hexo) {
+     res.done(getSettings())
+   });
+ 
++
+   use('settings/set', function (req, res, next) {
+     if (req.method !== 'POST') return next()
+     if (!req.body.name) {
