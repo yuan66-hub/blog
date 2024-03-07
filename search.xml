@@ -320,6 +320,83 @@
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ node</span><br><span class="line">&gt; var m = require(<span class="string">&#x27;./even&#x27;</span>);</span><br><span class="line">&gt; m.even(10)</span><br><span class="line">TypeError: even is not a <span class="keyword">function</span></span><br></pre></td></tr></table></figure>]]></content>
   </entry>
   <entry>
+    <title>js如何管理内存</title>
+    <url>/bolg/2024/03/01/js%E5%A6%82%E4%BD%95%E7%AE%A1%E7%90%86%E5%86%85%E5%AD%98/</url>
+    <content><![CDATA[<h1 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h1><p>JS的内存空间分为栈(stack)、堆(heap)、池(一般也会归类为栈中)。<br>其中栈存放变量，堆存放复杂对象，池存放常量，所以也叫常量池。</p>
+<h1 id="栈数据结构"><a href="#栈数据结构" class="headerlink" title="栈数据结构"></a>栈数据结构</h1><ol>
+<li>栈是一种特殊的列表，栈内的元素只能通过列表的一端访问，这一端称为栈顶。</li>
+<li>栈被称为是一种后入先出（LIFO，last-in-first-out）的数据结构。</li>
+<li>由于栈具有后入先出的特点，所以任何不在栈顶的元素都无法访问。</li>
+<li>为了得到栈底的元素，必须先拿掉上面的元素。</li>
+</ol>
+<h1 id="堆数据结构"><a href="#堆数据结构" class="headerlink" title="堆数据结构"></a>堆数据结构</h1><ol>
+<li>堆是一种经过排序的树形数据结构，每个结点都有一个值。</li>
+<li>通常我们所说的堆的数据结构，是指二叉堆。</li>
+<li>堆的特点是根结点的值最小（或最大），且根结点的两个子树也是一个堆。</li>
+<li>由于堆的这个特性，常用来实现优先队列，堆的存取是随意</li>
+</ol>
+<p>这就如同我们在图书馆的书架上取书，虽然书的摆放是有顺序的，但是我们想取任意一本时不必像栈一样，先取出前面所有的书，我们只需要关心书的名字。</p>
+<h1 id="变量类型与内存的关系"><a href="#变量类型与内存的关系" class="headerlink" title="变量类型与内存的关系"></a>变量类型与内存的关系</h1><h2 id="基本数据类型"><a href="#基本数据类型" class="headerlink" title="基本数据类型"></a>基本数据类型</h2><p>基本数据类型共有6种：</p>
+<ol>
+<li>Sting</li>
+<li>Number</li>
+<li>Boolean</li>
+<li>null</li>
+<li>undefined</li>
+<li>Symbol</li>
+</ol>
+<blockquote>
+<p>基本数据类型保存在栈内存中，因为基本数据类型占用空间小、大小固定，通过按值来访问，属于被频繁使用的数据。</p>
+</blockquote>
+<h2 id="引用数据类型"><a href="#引用数据类型" class="headerlink" title="引用数据类型"></a>引用数据类型</h2><ol>
+<li>Array</li>
+<li>Function</li>
+<li>Object</li>
+</ol>
+<blockquote>
+<p>引用数据类型存储在堆内存中，因为引用数据类型占据空间大、大小不固定。 如果存储在栈中，将会影响程序运行的性能； 引用数据类型在栈中存储了指针，该指针指向堆中该实体的起始地址。 当解释器寻找引用值时，会首先检索其在栈中的地址，取得地址后从堆中获得实体</p>
+</blockquote>
+<h2 id="栈内存和堆内存的优缺点"><a href="#栈内存和堆内存的优缺点" class="headerlink" title="栈内存和堆内存的优缺点"></a>栈内存和堆内存的优缺点</h2><ul>
+<li>在JS中，基本数据类型变量大小固定，并且操作简单容易，所以把它们放入栈中存储。</li>
+<li>引用类型变量大小不固定，所以把它们分配给堆中，让他们申请空间的时候自己确定大小，这样把它们分开存储能够使得程序运行起来占用的内存最小。</li>
+<li>栈内存由于它的特点，所以它的系统效率较高。</li>
+<li>堆内存需要分配空间和地址，还要把地址存到栈中，所以效率低于栈。</li>
+</ul>
+<h2 id="栈内存和堆内存的垃圾回收"><a href="#栈内存和堆内存的垃圾回收" class="headerlink" title="栈内存和堆内存的垃圾回收"></a>栈内存和堆内存的垃圾回收</h2><p>栈内存中变量一般在它的当前执行环境结束就会被销毁被垃圾回收制回收， 而堆内存中的变量则不会，因为不确定其他的地方是不是还有一些对它的引用。 堆内存中的变量只有在所有对它的引用都结束的时候才会被回收。</p>
+<h2 id="闭包与堆内存"><a href="#闭包与堆内存" class="headerlink" title="闭包与堆内存"></a>闭包与堆内存</h2><p>闭包中的变量并不保存中栈内存中，而是保存在堆内存中。 这也就解释了函数调用之后之后为什么闭包还能引用到函数内的变量。举一个例子：</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">A</span>(<span class="params"></span>) &#123;</span><br><span class="line">  <span class="keyword">let</span> a = <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">function</span> <span class="title function_">B</span>(<span class="params"></span>) &#123;</span><br><span class="line">      <span class="variable language_">console</span>.<span class="title function_">log</span>(a);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> B;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">let</span> res = <span class="title function_">A</span>();</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>函数 A 弹出调用栈后，函数 A 中的变量这时候是存储在堆上的，所以函数B依旧能引用到函数A中的变量。 现在的 JS 引擎可以通过逃逸分析辨别出哪些变量需要存储在堆上，哪些需要存储在栈上。</p>
+<h1 id="深克隆和浅克隆"><a href="#深克隆和浅克隆" class="headerlink" title="深克隆和浅克隆"></a>深克隆和浅克隆</h1><h2 id="浅克隆"><a href="#浅克隆" class="headerlink" title="浅克隆"></a>浅克隆</h2><ol>
+<li>浅拷贝只复制对象的第一层属性。如果对象的属性值是基本数据类型（如String、Number、Boolean等），则直接复制值；如果属性值是引用类型（如Array、Object等），则复制其内存地址，而不是复制实际的值或嵌套的对象。以下都是浅拷贝的实现：</li>
+</ol>
+<ul>
+<li><p>Object.assign()</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> origin = &#123; <span class="attr">a</span>: <span class="string">&#x27;原始字符串&#x27;</span>, <span class="attr">b</span>: &#123; <span class="attr">c</span>: <span class="number">1</span> &#125; &#125;;</span><br><span class="line"><span class="keyword">let</span> copy = <span class="title class_">Object</span>.<span class="title function_">assign</span>(&#123;&#125;, origin);</span><br><span class="line">origin.<span class="property">a</span> = <span class="string">&#x27;改变后的字符串&#x27;</span>;</span><br><span class="line">copy.<span class="property">b</span>.<span class="property">c</span> = <span class="number">2</span>;</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(origin); <span class="comment">// &#123;a: &#x27;改变后的字符串&#x27;, b: &#123;c: 2&#125;&#125;</span></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(copy); <span class="comment">// &#123;a: &#x27;原始字符串&#x27;, b: &#123;c: 2&#125;&#125;</span></span><br></pre></td></tr></table></figure></li>
+<li><p>扩展运算符</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> origin = &#123; <span class="attr">a</span>: <span class="string">&#x27;原始字符串&#x27;</span>, <span class="attr">b</span>: &#123; <span class="attr">c</span>: <span class="number">1</span> &#125; &#125;;</span><br><span class="line"><span class="keyword">let</span> copy = &#123; ...origin &#125;;</span><br><span class="line">origin.<span class="property">a</span> = <span class="string">&#x27;改变后的字符串&#x27;</span>;</span><br><span class="line">copy.<span class="property">b</span>.<span class="property">c</span> = <span class="number">2</span>;</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(origin); <span class="comment">// &#123;a: &#x27;改变后的字符串&#x27;, b: &#123;c: 2&#125;&#125;</span></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(copy); <span class="comment">// &#123;a: &#x27;原始字符串&#x27;, b: &#123;c: 2&#125;&#125;</span></span><br></pre></td></tr></table></figure></li>
+<li><p>slice(数组)</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> origin = [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>];</span><br><span class="line"><span class="keyword">let</span> copy = origin.<span class="title function_">slice</span>();</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(copy);</span><br></pre></td></tr></table></figure></li>
+<li><p>concat</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> original = [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>];</span><br><span class="line"><span class="keyword">let</span> copy = original.<span class="title function_">concat</span>();</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="深克隆"><a href="#深克隆" class="headerlink" title="深克隆"></a>深克隆</h2><ol start="2">
+<li>深拷贝相对于浅拷贝来说，不仅复制了对象本身及其包含的原始类型的值，还复制了所有引用类型的实际值。这意味着，如果你修改拷贝对象中的一个引用类型的值，原始对象中相应的值不会发生变化，因为它们指向了不同的内存地址。深拷贝不仅复制对象的第一层属性，还递归复制所有的嵌套对象。这意味着，无论对象有多少层嵌套，深拷贝都会创建所有层次的副本。因此，原始对象和拷贝对象之间不会相互影响。</li>
+</ol>
+<ul>
+<li><p>JSON.parse(JSON.stringify(object))</p>
+ <figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> original = &#123; <span class="attr">a</span>: <span class="number">1</span>, <span class="attr">b</span>: &#123; <span class="attr">c</span>: <span class="number">2</span> &#125; &#125;;</span><br><span class="line"><span class="keyword">let</span> copy = <span class="title class_">JSON</span>.<span class="title function_">parse</span>(<span class="title class_">JSON</span>.<span class="title function_">stringify</span>(original));</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(copy); <span class="comment">// &#123; a: 1, b: &#123; c: 2 &#125; &#125;</span></span><br><span class="line"><span class="title class_">JSON</span>.<span class="title function_">parse</span>(<span class="title class_">JSON</span>.<span class="title function_">stringify</span>(<span class="title class_">NaN</span>))  <span class="comment">// null</span></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>使用 JSON.stringify() 将对象序列化（转换为JSON字符串），然后使用 JSON.parse() 将字符串解析为新的对象。这种方法不能复制函数和循环引用的对象。</p>
+</blockquote>
+</li>
+<li><p>递归拷贝</p>
+ <figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">deepCopy</span>(<span class="params">obj</span>) &#123;</span><br><span class="line"><span class="keyword">if</span> (<span class="keyword">typeof</span> obj !== <span class="string">&#x27;object&#x27;</span> || obj === <span class="literal">null</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> obj;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> copy;</span><br><span class="line"><span class="keyword">if</span> (<span class="title class_">Array</span>.<span class="title function_">isArray</span>(obj)) &#123;</span><br><span class="line">    copy = [];</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; obj.<span class="property">length</span>; i++) &#123;</span><br><span class="line">        copy[i] = <span class="title function_">deepCopy</span>(obj[i]);</span><br><span class="line">    &#125;</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    copy = &#123;&#125;;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">let</span> key <span class="keyword">in</span> obj) &#123;</span><br><span class="line">            <span class="keyword">if</span> (obj.<span class="title function_">hasOwnProperty</span>(key)) &#123; <span class="comment">// 检查是否是对象自身具有的属性，因为in会包含原型链上的属性，这里只拷贝自身的！</span></span><br><span class="line">                copy[key] = <span class="title function_">deepCopy</span>(obj[key]);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> copy;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
+<li><p>使用第三方库：如Lodash的 _.cloneDeep()</p>
+ <figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> original = &#123; <span class="attr">a</span>: <span class="number">1</span>, <span class="attr">b</span>: &#123; <span class="attr">c</span>: <span class="number">2</span> &#125; &#125;;</span><br><span class="line"><span class="keyword">let</span> copy = _.<span class="title function_">cloneDeep</span>(original);</span><br></pre></td></tr></table></figure></li>
+</ul>
+]]></content>
+  </entry>
+  <entry>
     <title>事件循环</title>
     <url>/bolg/2023/02/16/%E4%BA%8B%E4%BB%B6%E5%BE%AA%E7%8E%AF/</url>
     <content><![CDATA[<h2 id="浏览器的进程模型"><a href="#浏览器的进程模型" class="headerlink" title="浏览器的进程模型"></a>浏览器的进程模型</h2><h3 id="何为进程？"><a href="#何为进程？" class="headerlink" title="何为进程？"></a>何为进程？</h3><p>程序运行需要有它自己专属的内存空间，可以把这块内存空间简单的理解为进程</p>
@@ -456,228 +533,6 @@
 <li>受事件循环的影响，计时器的回调函数只能在主线程空闲时运行，因此又带来了偏差</li>
 </ol>
 </blockquote>
-]]></content>
-  </entry>
-  <entry>
-    <title>js如何管理内存</title>
-    <url>/bolg/2024/03/01/js%E5%A6%82%E4%BD%95%E7%AE%A1%E7%90%86%E5%86%85%E5%AD%98/</url>
-    <content><![CDATA[<h1 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h1><p>JS的内存空间分为栈(stack)、堆(heap)、池(一般也会归类为栈中)。<br>其中栈存放变量，堆存放复杂对象，池存放常量，所以也叫常量池。</p>
-<h1 id="栈数据结构"><a href="#栈数据结构" class="headerlink" title="栈数据结构"></a>栈数据结构</h1><ol>
-<li>栈是一种特殊的列表，栈内的元素只能通过列表的一端访问，这一端称为栈顶。</li>
-<li>栈被称为是一种后入先出（LIFO，last-in-first-out）的数据结构。</li>
-<li>由于栈具有后入先出的特点，所以任何不在栈顶的元素都无法访问。</li>
-<li>为了得到栈底的元素，必须先拿掉上面的元素。</li>
-</ol>
-<h1 id="堆数据结构"><a href="#堆数据结构" class="headerlink" title="堆数据结构"></a>堆数据结构</h1><ol>
-<li>堆是一种经过排序的树形数据结构，每个结点都有一个值。</li>
-<li>通常我们所说的堆的数据结构，是指二叉堆。</li>
-<li>堆的特点是根结点的值最小（或最大），且根结点的两个子树也是一个堆。</li>
-<li>由于堆的这个特性，常用来实现优先队列，堆的存取是随意</li>
-</ol>
-<p>这就如同我们在图书馆的书架上取书，虽然书的摆放是有顺序的，但是我们想取任意一本时不必像栈一样，先取出前面所有的书，我们只需要关心书的名字。</p>
-<h1 id="变量类型与内存的关系"><a href="#变量类型与内存的关系" class="headerlink" title="变量类型与内存的关系"></a>变量类型与内存的关系</h1><h2 id="基本数据类型"><a href="#基本数据类型" class="headerlink" title="基本数据类型"></a>基本数据类型</h2><p>基本数据类型共有6种：</p>
-<ol>
-<li>Sting</li>
-<li>Number</li>
-<li>Boolean</li>
-<li>null</li>
-<li>undefined</li>
-<li>Symbol</li>
-</ol>
-<blockquote>
-<p>基本数据类型保存在栈内存中，因为基本数据类型占用空间小、大小固定，通过按值来访问，属于被频繁使用的数据。</p>
-</blockquote>
-<h2 id="引用数据类型"><a href="#引用数据类型" class="headerlink" title="引用数据类型"></a>引用数据类型</h2><ol>
-<li>Array</li>
-<li>Function</li>
-<li>Object</li>
-</ol>
-<blockquote>
-<p>引用数据类型存储在堆内存中，因为引用数据类型占据空间大、大小不固定。 如果存储在栈中，将会影响程序运行的性能； 引用数据类型在栈中存储了指针，该指针指向堆中该实体的起始地址。 当解释器寻找引用值时，会首先检索其在栈中的地址，取得地址后从堆中获得实体</p>
-</blockquote>
-<h2 id="栈内存和堆内存的优缺点"><a href="#栈内存和堆内存的优缺点" class="headerlink" title="栈内存和堆内存的优缺点"></a>栈内存和堆内存的优缺点</h2><ul>
-<li>在JS中，基本数据类型变量大小固定，并且操作简单容易，所以把它们放入栈中存储。</li>
-<li>引用类型变量大小不固定，所以把它们分配给堆中，让他们申请空间的时候自己确定大小，这样把它们分开存储能够使得程序运行起来占用的内存最小。</li>
-<li>栈内存由于它的特点，所以它的系统效率较高。</li>
-<li>堆内存需要分配空间和地址，还要把地址存到栈中，所以效率低于栈。</li>
-</ul>
-<h2 id="栈内存和堆内存的垃圾回收"><a href="#栈内存和堆内存的垃圾回收" class="headerlink" title="栈内存和堆内存的垃圾回收"></a>栈内存和堆内存的垃圾回收</h2><p>栈内存中变量一般在它的当前执行环境结束就会被销毁被垃圾回收制回收， 而堆内存中的变量则不会，因为不确定其他的地方是不是还有一些对它的引用。 堆内存中的变量只有在所有对它的引用都结束的时候才会被回收。</p>
-<h2 id="闭包与堆内存"><a href="#闭包与堆内存" class="headerlink" title="闭包与堆内存"></a>闭包与堆内存</h2><p>闭包中的变量并不保存中栈内存中，而是保存在堆内存中。 这也就解释了函数调用之后之后为什么闭包还能引用到函数内的变量。举一个例子：</p>
-<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">A</span>(<span class="params"></span>) &#123;</span><br><span class="line">  <span class="keyword">let</span> a = <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">function</span> <span class="title function_">B</span>(<span class="params"></span>) &#123;</span><br><span class="line">      <span class="variable language_">console</span>.<span class="title function_">log</span>(a);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> B;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">let</span> res = <span class="title function_">A</span>();</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>函数 A 弹出调用栈后，函数 A 中的变量这时候是存储在堆上的，所以函数B依旧能引用到函数A中的变量。 现在的 JS 引擎可以通过逃逸分析辨别出哪些变量需要存储在堆上，哪些需要存储在栈上。</p>
-<h1 id="深克隆和浅克隆"><a href="#深克隆和浅克隆" class="headerlink" title="深克隆和浅克隆"></a>深克隆和浅克隆</h1><h2 id="浅克隆"><a href="#浅克隆" class="headerlink" title="浅克隆"></a>浅克隆</h2><ol>
-<li>浅拷贝只复制对象的第一层属性。如果对象的属性值是基本数据类型（如String、Number、Boolean等），则直接复制值；如果属性值是引用类型（如Array、Object等），则复制其内存地址，而不是复制实际的值或嵌套的对象。以下都是浅拷贝的实现：</li>
-</ol>
-<ul>
-<li><p>Object.assign()</p>
-<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> origin = &#123; <span class="attr">a</span>: <span class="string">&#x27;原始字符串&#x27;</span>, <span class="attr">b</span>: &#123; <span class="attr">c</span>: <span class="number">1</span> &#125; &#125;;</span><br><span class="line"><span class="keyword">let</span> copy = <span class="title class_">Object</span>.<span class="title function_">assign</span>(&#123;&#125;, origin);</span><br><span class="line">origin.<span class="property">a</span> = <span class="string">&#x27;改变后的字符串&#x27;</span>;</span><br><span class="line">copy.<span class="property">b</span>.<span class="property">c</span> = <span class="number">2</span>;</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(origin); <span class="comment">// &#123;a: &#x27;改变后的字符串&#x27;, b: &#123;c: 2&#125;&#125;</span></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(copy); <span class="comment">// &#123;a: &#x27;原始字符串&#x27;, b: &#123;c: 2&#125;&#125;</span></span><br></pre></td></tr></table></figure></li>
-<li><p>扩展运算符</p>
-<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> origin = &#123; <span class="attr">a</span>: <span class="string">&#x27;原始字符串&#x27;</span>, <span class="attr">b</span>: &#123; <span class="attr">c</span>: <span class="number">1</span> &#125; &#125;;</span><br><span class="line"><span class="keyword">let</span> copy = &#123; ...origin &#125;;</span><br><span class="line">origin.<span class="property">a</span> = <span class="string">&#x27;改变后的字符串&#x27;</span>;</span><br><span class="line">copy.<span class="property">b</span>.<span class="property">c</span> = <span class="number">2</span>;</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(origin); <span class="comment">// &#123;a: &#x27;改变后的字符串&#x27;, b: &#123;c: 2&#125;&#125;</span></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(copy); <span class="comment">// &#123;a: &#x27;原始字符串&#x27;, b: &#123;c: 2&#125;&#125;</span></span><br></pre></td></tr></table></figure></li>
-<li><p>slice(数组)</p>
-<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> origin = [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>];</span><br><span class="line"><span class="keyword">let</span> copy = origin.<span class="title function_">slice</span>();</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(copy);</span><br></pre></td></tr></table></figure></li>
-<li><p>concat</p>
-<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> original = [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>];</span><br><span class="line"><span class="keyword">let</span> copy = original.<span class="title function_">concat</span>();</span><br></pre></td></tr></table></figure></li>
-</ul>
-<h2 id="深克隆"><a href="#深克隆" class="headerlink" title="深克隆"></a>深克隆</h2><ol start="2">
-<li>深拷贝相对于浅拷贝来说，不仅复制了对象本身及其包含的原始类型的值，还复制了所有引用类型的实际值。这意味着，如果你修改拷贝对象中的一个引用类型的值，原始对象中相应的值不会发生变化，因为它们指向了不同的内存地址。深拷贝不仅复制对象的第一层属性，还递归复制所有的嵌套对象。这意味着，无论对象有多少层嵌套，深拷贝都会创建所有层次的副本。因此，原始对象和拷贝对象之间不会相互影响。</li>
-</ol>
-<ul>
-<li><p>JSON.parse(JSON.stringify(object))</p>
- <figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> original = &#123; <span class="attr">a</span>: <span class="number">1</span>, <span class="attr">b</span>: &#123; <span class="attr">c</span>: <span class="number">2</span> &#125; &#125;;</span><br><span class="line"><span class="keyword">let</span> copy = <span class="title class_">JSON</span>.<span class="title function_">parse</span>(<span class="title class_">JSON</span>.<span class="title function_">stringify</span>(original));</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(copy); <span class="comment">// &#123; a: 1, b: &#123; c: 2 &#125; &#125;</span></span><br><span class="line"><span class="title class_">JSON</span>.<span class="title function_">parse</span>(<span class="title class_">JSON</span>.<span class="title function_">stringify</span>(<span class="title class_">NaN</span>))  <span class="comment">// null</span></span><br></pre></td></tr></table></figure>
-<blockquote>
-<p>使用 JSON.stringify() 将对象序列化（转换为JSON字符串），然后使用 JSON.parse() 将字符串解析为新的对象。这种方法不能复制函数和循环引用的对象。</p>
-</blockquote>
-</li>
-<li><p>递归拷贝</p>
- <figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">deepCopy</span>(<span class="params">obj</span>) &#123;</span><br><span class="line"><span class="keyword">if</span> (<span class="keyword">typeof</span> obj !== <span class="string">&#x27;object&#x27;</span> || obj === <span class="literal">null</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> obj;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> copy;</span><br><span class="line"><span class="keyword">if</span> (<span class="title class_">Array</span>.<span class="title function_">isArray</span>(obj)) &#123;</span><br><span class="line">    copy = [];</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; obj.<span class="property">length</span>; i++) &#123;</span><br><span class="line">        copy[i] = <span class="title function_">deepCopy</span>(obj[i]);</span><br><span class="line">    &#125;</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    copy = &#123;&#125;;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">let</span> key <span class="keyword">in</span> obj) &#123;</span><br><span class="line">            <span class="keyword">if</span> (obj.<span class="title function_">hasOwnProperty</span>(key)) &#123; <span class="comment">// 检查是否是对象自身具有的属性，因为in会包含原型链上的属性，这里只拷贝自身的！</span></span><br><span class="line">                copy[key] = <span class="title function_">deepCopy</span>(obj[key]);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> copy;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
-<li><p>使用第三方库：如Lodash的 _.cloneDeep()</p>
- <figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> original = &#123; <span class="attr">a</span>: <span class="number">1</span>, <span class="attr">b</span>: &#123; <span class="attr">c</span>: <span class="number">2</span> &#125; &#125;;</span><br><span class="line"><span class="keyword">let</span> copy = _.<span class="title function_">cloneDeep</span>(original);</span><br></pre></td></tr></table></figure></li>
-</ul>
-]]></content>
-  </entry>
-  <entry>
-    <title>如何区别进程和线程、协程的关系</title>
-    <url>/bolg/2024/02/29/%E5%A6%82%E4%BD%95%E5%8C%BA%E5%88%AB%E8%BF%9B%E7%A8%8B%E5%92%8C%E7%BA%BF%E7%A8%8B%E3%80%81%E5%8D%8F%E7%A8%8B%E7%9A%84%E5%85%B3%E7%B3%BB/</url>
-    <content><![CDATA[<h2 id="进程"><a href="#进程" class="headerlink" title="进程"></a>进程</h2><h3 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h3><blockquote>
-<p>进程（Process）是计算机中的程序关于某数据集合上的一次运行活动，是系统进行资源分配和调度的基本单位，是操作系统结构的基础。在早期面向进程设计的计算机结构中，进程是程序的基本执行实体；在当代面向线程设计的计算机结构中，进程是线程的容器。程序是指令、数据及其组织形式的描述，进程是程序的实体。</p>
-</blockquote>
-<ul>
-<li>狭义定义：进程就是一段程序的执行过程例如启动的某个app。</li>
-<li>广义定义：进程是一个具有独立功能的程序关于某个数据集合的一次运行活动。它是<code>操作系统动态执行的基本单元</code>，在传统的操作系统中,进程即是基本的分配单元，也是基本的执行单元。</li>
-</ul>
-<p><code>1.进程(process)最小的资源管理单元[操作系统] 2.应用程序的启动实例，进程拥有代码和打开的文件资源、数据资源、独立的内存空间</code></p>
-<p>进程的生命周期基本由操作系统内核进行支配，即进程的创建、切换、销毁等操作都将使会陷入内核，进行系统调用。该操作消耗较大。当进行进程的销毁时，包含但不仅于内存地址空间、内核态堆栈和硬件上下文(CPU寄存器)的切换甚至在内存资源较少的情况下会将已存入内存的数据写入磁盘交换区，代价较大。因此，我们可以发现当系统运行的进程越多，系统越是卡顿。</p>
-<h3 id="特征"><a href="#特征" class="headerlink" title="特征"></a>特征</h3><ul>
-<li>每个进程都有自己的地址空间，一般情况下，包含文本区域、数据区域、堆栈</li>
-<li>进程是执行中的程序，程序是一个没有生命的实体，只有处理器赋予程序生命时，它才能成为一个活动的实体，我们称之为进程</li>
-<li>进程本身不会运行，是线程的容器。线程不能单独执行，必须组成进程</li>
-<li>一个程序至少有一个进程，一个进程至少有一个线程</li>
-<li>对于操作系统来讲，一个任务就是一个进程，比如开一个浏览器就是启动一个浏览器进程。打开一款app就是打开一个进程。</li>
-<li>有些进程还不止同时做一件事情。在一个进程内部，可以同时做多件事情，比如边看视频可以边发弹幕。</li>
-</ul>
-<h3 id="进程状态：（三状态）"><a href="#进程状态：（三状态）" class="headerlink" title="进程状态：（三状态）"></a>进程状态：（三状态）</h3><ul>
-<li>就绪：获取CPU外的所有资源、只要处理器分配资源就可以马上执行</li>
-<li>运行：获得处理器分配的资源，程序开始执行</li>
-<li>阻塞：当程序条件不够的时候，需要等待提交满足的时候才能执行。</li>
-</ul>
-<h3 id="状态详解"><a href="#状态详解" class="headerlink" title="状态详解"></a>状态详解</h3><ul>
-<li>创建状态：进程在创建时需要申请一个空白PCB，向其中填写控制和管理进程的信息，<code>完成资源分配</code>。如果创建工作无法完成，比如资源无法满足，就无法被调度运行，把此时进程所处状态称为创建状态</li>
-<li>就绪状态：进程已经准备好，<code>已分配到所需资源，只要分配到CPU就能够立即运行</code></li>
-<li>执行状态：进程<code>处于就绪状态被调度后，进程进入执行状态</code></li>
-<li>阻塞状态：正在执行的进程由于某些事件（I&#x2F;O请求，申请缓存区失败）而暂时无法运行，<code>进程受到阻塞</code>。在满足请求时进入就绪状态等待系统调用</li>
-<li>终止状态：<code>进程结束，或出现错误，或被系统终止</code>，进入终止状态。无法再执行</li>
-</ul>
-<h2 id="线程"><a href="#线程" class="headerlink" title="线程"></a>线程</h2><h3 id="定义-1"><a href="#定义-1" class="headerlink" title="定义"></a>定义</h3><blockquote>
-<p>线程（Thread）是操作系统能够进行运算调度的最小单位。它被包含在进程之中，是进程中的实际运作单位。一条线程指的是进程中一个单一顺序的控制流，一个进程中可以并发多个线程，每条线程并行执行不同的任务。在Unix System V及SunOS中也被称为轻量进程（lightweight processes），但轻量进程更多指内核线程（kernel thread），而把用户线程（user thread）称为线程。</p>
-</blockquote>
-<p><code>1.线程(thread)最小的执行单元[操作系统] 2.一个进程包含多个线程(一主多从),拥有自己的栈空间</code></p>
-<h3 id="特征-1"><a href="#特征-1" class="headerlink" title="特征"></a>特征</h3><ul>
-<li>一个进程中至少有一个线程，不然就没有存在的意义</li>
-<li>在一个进程内部，要同时干多件事情，就需要同时运行多个子任务，我们把进程内的这些子任务叫做线程</li>
-<li>多线程就是为了同步完成多项任务(在单个程序中同时运行多个线程完成不同的任务和工作)，是为了提高资源使用效率来提高系统的效率，而不是为了提高运行效率。</li>
-<li>一个简单的比喻，多线程就像是给车保养的工人有洗车工有维修有美容的，而进程就是待被清洗维护美容店车</li>
-<li>线程是程序执行流的最小单元。一个标准的线程由当前的线程ID、当前指令指针、寄存器和堆栈组成</li>
-<li>同一个进程中的多个线程之间可以并发执行</li>
-</ul>
-<h3 id="线程状态："><a href="#线程状态：" class="headerlink" title="线程状态："></a>线程状态：</h3><ul>
-<li>就绪：指线程具备运行的所有条件，逻辑上可以运行，在等待处理机</li>
-<li>运行：指线程占用处理机正在运行</li>
-<li>阻塞：线程在等待一个事件，逻辑上不可执行</li>
-</ul>
-<h3 id="进程与线程对比"><a href="#进程与线程对比" class="headerlink" title="进程与线程对比"></a>进程与线程对比</h3><ul>
-<li><p>进程是操作系统资源分配的<code>基本单位</code>，而线程是任务调度和执行的基本单位</p>
-<p>线程和进程的实现在操作系统之间有所不同，但在大多数情况下，线程是进程的一个组件。进程是操作系统资源分配的基本单位，而线程是任务调度和执行的基本单位。在操作系统中能同时运行多个进程；而在同一个进程中有多个线程同时执行（通过CPU调度，在每个时间片中只有一个线程执行）。</p>
-</li>
-<li><p>进程拥有独立的<code>内存空间</code>，线程则共享所在进程中的内存空间</p>
-<p>进程是系统中独立存在的实体，它可以拥有自己独立的资源，系统在运行的时候会为每个进程分配不同的内存空间，所以每一个进程都拥有自己私有的内存空间。在没有经过进程本身允许的情况下，一个用户的进程不可以直接访问其它进程的内存空间。而对线程而言，除了CPU外，系统不会为线程分配内存（线程所使用的资源来自其所属进程的资源），一个进程中的多个线程之间只能共享进程的资源。而不同的进程不共享这些资源。</p>
-</li>
-<li><p>进程之间切换开销较大，而线程间切换<code>开销</code>较小</p>
-<p>每个进程都有独立的数据空间（程序上下文），进程之间的切换会有较大的开销；线程可以看做轻量级的进程，同一类线程共享代码和数据空间，每个线程都有自己独立的运行栈和程序计数器（PC），线程的切换的消耗随略小于进程，较少进行内存和磁盘的交换，但是仍然会有堆栈的映射和切换。</p>
-</li>
-<li><p>程序是一个静态<code>指令的集合</code>，而进程是一个正在系统中活动的指令集合</p>
-<p>进程与程序的区别在于，程序只是一个静态的指令集合，而进程是一个正在系统中活动的指令集合。在进程中加入了时间的概念。进程具有自己的生命周期和各种不同的状态，这写概念在程序中是不具备的。</p>
-</li>
-</ul>
-<h2 id="协程"><a href="#协程" class="headerlink" title="协程"></a>协程</h2><h3 id="定义-2"><a href="#定义-2" class="headerlink" title="定义"></a>定义</h3><p>协程，又称微线程，纤程。英文名Coroutine。一句话说明什么是线程：协程是一种用户态的<strong>轻量级线程</strong>，协程的调度完全由用户控制（进程和线程都是由cpu 内核进行调度）。</p>
-<p><code>1.协程(Coroutines)特殊的函数[程序控制] 2.一个线程可以拥有多个协程 3.可以暂停执行（暂停的表达式称为暂停点) 4.可以从挂起点恢复（保留其原始参数和局部变量） 5.事件循环是异步编程的底层基石</code></p>
-<p>从名字可以看出，协程的粒度比线程更小，并且是用户管理和控制的，多个协程可以运行在一个线程上面。那么协程出现的背景又是什么呢，先来看一下目前线程中影响性能的特性：</p>
-<ul>
-<li>使用锁机制</li>
-<li>线程间的上下文切换</li>
-<li>线程运行和阻塞状态的切换</li>
-</ul>
-<p>以上任意一点都是很消耗cpu性能的。相对来说协程是由程序自身控制，没有线程切换的开销，且不需要锁机制，因为在同一个线程中运行，不存在同时写变量冲突，在协程中操作共享资源不加锁，只需要判断状态就行了，所以执行效率比线程高的多。</p>
-<h3 id="特征-2"><a href="#特征-2" class="headerlink" title="特征"></a>特征</h3><p>协程拥有自己的寄存器上下文和栈。协程调度切换时，将寄存器上下文和栈保存到其他地方，在切回来的时候，恢复先前保存的寄存器上下文和栈，直接操作栈则基本没有内核切换的开销，可以不加锁的访问全局变量，所以上下文的切换非常快。因此：协程能保留上一次调用时的状态（即所有局部状态的一个特定组合），每次过程重入时，就相当于进入上一次调用的状态，换种说法：进入上一次离开时所处逻辑流的位置。</p>
-<ul>
-<li><p>对于 协程(用户级线程)，这是对内核透明的，也就是系统并不知道有协程的存在，是完全由用户自己的程序进行调度的，因为是由用户程序自己控制，那么就很难像抢占式调度那样做到强制的 CPU 控制权切换到其他进程&#x2F;线程，通常只能进行 协作式调度，需要协程自己主动把控制权转让出去之后，其他协程才能被执行到。</p>
-</li>
-<li><p>对于 进程、线程，都是有内核进行调度，有 CPU 时间片的概念，进行 抢占式调度（有多种调度算法）</p>
-</li>
-</ul>
-<h3 id="协程的优点："><a href="#协程的优点：" class="headerlink" title="协程的优点："></a>协程的优点：</h3><ol>
-<li>无需线程上下文切换的开销，goroutine(协程) 切换调度开销方面远比线程小。</li>
-<li>无需原子操作锁定及同步的开销</li>
-<li>方便切换控制流，简化编程模型</li>
-<li>每个 goroutine (协程) 默认占用内存远比 Java 、C 的线程少。goroutine：2KB（官方），线程：8MB（参考网络）</li>
-</ol>
-<p>高并发+高扩展性+低成本：一个CPU支持上万的协程都不是问题。所以很适合用于高并发处理。</p>
-<h3 id="协程的缺点："><a href="#协程的缺点：" class="headerlink" title="协程的缺点："></a>协程的缺点：</h3><ol>
-<li>无法利用多核资源：协程的本质是个单线程,它不能同时将 单个CPU 的多个核用上,协程需要和进程配合才能运行在多CPU上.当然我们日常所编写的绝大部分应用都没有这个必要，除非是cpu密集型应用。</li>
-<li>进行阻塞（Blocking）操作（如IO时）会阻塞掉整个程序</li>
-</ol>
-<p><strong>CPU密集型代码(各种循环处理、计算等等)：使用多进程。IO密集型代码(文件处理、网络爬虫等)：使用多线程</strong></p>
-<h2 id="并发与并行"><a href="#并发与并行" class="headerlink" title="并发与并行"></a><strong>并发与并行</strong></h2><h3 id="并发"><a href="#并发" class="headerlink" title="并发"></a>并发</h3><p>并发：在操作系统中，某一时间段，几个程序在同一个CPU上运行，但在任意一个时间点上，只有一个程序在CPU上运行。</p>
-<p>当有多个线程时，如果系统只有一个CPU，那么CPU不可能真正同时进行多个线程，CPU的运行时间会被划分成若干个时间段，每个时间段分配给各个线程去执行，一个时间段里某个线程运行时，其他线程处于挂起状态，这就是并发。并发解决了程序排队等待的问题，如果一个程序发生阻塞，其他程序仍然可以正常执行。</p>
-<h3 id="并行"><a href="#并行" class="headerlink" title="并行"></a>并行</h3><p>并行：当操作系统有多个CPU时，一个CPU处理A线程，另一个CPU处理B线程，两个线程互相不抢占CPU资源，可以同时进行，这种方式成为并行。</p>
-<h3 id="并发与并行的区别"><a href="#并发与并行的区别" class="headerlink" title="并发与并行的区别"></a>并发与并行的区别</h3><ol>
-<li>并发只是在宏观上给人感觉有多个程序在同时运行，但在实际的单CPU系统中，每一时刻只有一个程序在运行，微观上这些程序是分时交替执行。</li>
-<li>在多CPU系统中，将这些并发执行的程序分配到不同的CPU上处理，每个CPU用来处理一个程序，这样多个程序便可以实现同时执行。</li>
-</ol>
-<p>知乎上高赞例子：</p>
-<ul>
-<li>你吃饭吃到一半，电话来了，你一直到吃完了以后才去接，这就说明你不支持并发也不支持并行。</li>
-<li>你吃饭吃到一半，电话来了，你停了下来接了电话，接完后继续吃饭，这说明你支持并发。</li>
-<li>你吃饭吃到一半，电话来了，你一边打电话一边吃饭，这说明你支持并行。</li>
-</ul>
-<p>并发的关键是你有处理多个任务的能力，不一定要同时。并行的关键是你有同时处理多个任务的能力。所以我认为它们最关键的点就是：是否是 <strong>『同时』</strong>。</p>
-<h2 id="JavaScript中的协程"><a href="#JavaScript中的协程" class="headerlink" title="JavaScript中的协程"></a>JavaScript中的协程</h2><h3 id="JavaScript-协程的发展"><a href="#JavaScript-协程的发展" class="headerlink" title="JavaScript 协程的发展"></a>JavaScript 协程的发展</h3><ul>
-<li>同步代码</li>
-<li>异步JavaScript: callback hell（回调地狱）</li>
-<li>ES6引入 Promise&#x2F;a+, 生成器Generators(语法 _<em>function</em> foo(){}_*  可以赋予函数执行暂停&#x2F;保存上下文&#x2F;恢复执行状态的功能), 新关键词yield使生成器函数暂停.</li>
-<li>ES7引入 async函数&#x2F;await语法糖,async可以声明一个异步函数(将Generator函数和自动执行器，包装在一个函数里)，此函数需要返回一个 Promise 对象。await 可以等待一个 Promise 对象 resolve，并拿到结果,</li>
-</ul>
-<p>Promise中也利用了回调函数。在then和catch方法中都传入了一个回调函数，分别在Promise被满足和被拒绝时执行, 这样就就能让它能够被链接起来完成一系列任务。总之就是把层层嵌套的 callback 变成 .then().then()…，从而使代码编写和阅读更直观</p>
-<p>生成器Generator的底层实现机制是协程Coroutine。</p>
-<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">function</span>* <span class="title function_">foo</span>(<span class="params"></span>) &#123;     <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;foo start&quot;</span>)     a = <span class="keyword">yield</span> <span class="number">1</span>;     <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;foo a&quot;</span>, a)     <span class="keyword">yield</span> <span class="number">2</span>;     <span class="keyword">yield</span> <span class="number">3</span>;     <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;foo end&quot;</span>) &#125; <span class="keyword">const</span> gen = <span class="title function_">foo</span>(); <span class="variable language_">console</span>.<span class="title function_">log</span>(gen.<span class="title function_">next</span>().<span class="property">value</span>); <span class="comment">// 1 // gen.send(&quot;a&quot;) // http://www.voidcn.com/article/p-syzbwqht-bvv.html SpiderMonkey引擎支持 send 语法 console.log(gen.next().value); // 2 console.log(gen.next().value); // 3 console.log(foo().next().value); // 1 console.log(foo().next().value); // 1 /* foo start 1 foo a undefined 2 3 foo start 1 foo start 1 */</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="JavaScript-协程成熟体"><a href="#JavaScript-协程成熟体" class="headerlink" title="JavaScript 协程成熟体"></a>JavaScript 协程成熟体</h3><h4 id="Promise继续使用"><a href="#Promise继续使用" class="headerlink" title="Promise继续使用"></a>Promise继续使用</h4><p>Promise 本质是一个状态机，用于表示一个异步操作的最终完成 (或失败), 及其结果值。它有三个状态：</p>
-<ul>
-<li>pending: 初始状态，既不是成功，也不是失败状态。</li>
-<li>fulfilled: 意味着操作成功完成。</li>
-<li>rejected: 意味着操作失败。</li>
-</ul>
-<p>最终 Promise 会有两种状态，一种成功，一种失败，当 pending 变化的时候，Promise 对象会根据最终的状态调用不同的处理函数。</p>
-<h4 id="async、await语法糖"><a href="#async、await语法糖" class="headerlink" title="async、await语法糖"></a>async、await语法糖</h4><p>async、await 是对 Generator 和 Promise 组合的封装, 使原先的异步代码在形式上更接近同步代码的写法,并且对错误处理&#x2F;条件分支&#x2F;异常堆栈&#x2F;调试等操作更友好。Async、Await 实现了 Generator 的自动迭代，正因为 Async、Await 是对 Generator 和 Promise 组合的封装，所以 Async 和 Await 基本上就只能用来实现异步和并发了，而不具有协程的其他作用。</p>
-<h3 id="JavaScript-异步执行的运行机制"><a href="#JavaScript-异步执行的运行机制" class="headerlink" title="JavaScript 异步执行的运行机制"></a>JavaScript 异步执行的运行机制</h3><ol>
-<li>所有任务都在主线程上执行，形成一个执行栈。\</li>
-<li>主线程之外，还存在一个”任务队列”（task queue）。只要异步任务有了运行结果，就在”任务队列”之中放置一个事件。\</li>
-<li>一旦”执行栈”中的所有同步任务执行完毕，系统就会读取”任务队列”。那些对应的异步任务，结束等待状态，进入执行栈并开始执行。</li>
-</ol>
-<p>遇到同步任务直接执行,遇到异步任务分类为宏任务(macro-task)和微任务(micro-task)。<br>当前执行栈执行完毕时会立刻先处理所有微任务队列中的事件，然后再去宏任务队列中取出一个事件。同一次事件循环中，微任务永远在宏任务之前执行。</p>
-<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> sleep = <span class="keyword">function</span> (<span class="params">time</span>) &#123;     <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;sleep start&quot;</span>)     <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Promise</span>(<span class="keyword">function</span> (<span class="params">resolve, reject</span>) &#123;         <span class="built_in">setTimeout</span>(<span class="keyword">function</span> (<span class="params"></span>) &#123;             <span class="title function_">resolve</span>();         &#125;, time);     &#125;); &#125;; <span class="keyword">async</span> <span class="keyword">function</span> <span class="title function_">exec</span>(<span class="params"></span>) &#123;     <span class="keyword">await</span> <span class="title function_">sleep</span>(<span class="number">2000</span>);     <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;sleep end&quot;</span>) &#125; <span class="keyword">async</span> <span class="keyword">function</span> <span class="title function_">go</span>(<span class="params"></span>) &#123;     <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="title class_">Date</span>.<span class="title function_">now</span>())     c1 = <span class="title function_">exec</span>()     <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;-------1&quot;</span>)     c2 = <span class="title function_">exec</span>()     <span class="variable language_">console</span>.<span class="title function_">log</span>(c1, c2)     <span class="keyword">await</span> c1;     <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;-------2&quot;</span>)     <span class="keyword">await</span> c2;     <span class="variable language_">console</span>.<span class="title function_">log</span>(c1, c2)     <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="title class_">Date</span>.<span class="title function_">now</span>()) &#125; <span class="title function_">go</span>();</span><br></pre></td></tr></table></figure>
-
-<h3 id="event-loop将任务划分："><a href="#event-loop将任务划分：" class="headerlink" title="event loop将任务划分："></a>event loop将任务划分：</h3><ul>
-<li>主线程循环从”任务队列”中读取事件</li>
-<li>宏队列（macro task）js同步执行的代码块，setTimeout、setInterval、XMLHttprequest、setImmediate、I&#x2F;O、UI rendering等, 本质是参与了事件循环的任务.</li>
-<li>微队列（micro task）Promise、process.nextTick（node环境）、Object.observe, MutationObserver等,本质是直接在 Javascript 引擎中的执行的没有参与事件循环的任务.</li>
-</ul>
-<h2 id="最佳实践"><a href="#最佳实践" class="headerlink" title="最佳实践"></a><strong>最佳实践</strong></h2><ol>
-<li>线程和协程推荐在IO密集型的任务(比如网络调用)中使用，而在CPU密集型的任务中，表现较差。</li>
-<li>对于CPU密集型的任务，则需要多个进程，绕开GIL的限制，利用所有可用的CPU核心，提高效率。</li>
-<li>所以大并发下的最佳实践就是多进程+协程，既充分利用多核，又充分发挥协程的高效率，可获得极高的性能。</li>
-</ol>
-<p>总结：进程、线程和协程的设计，都是为了并发任务能够更好的利用CPU资源，他们最大的区别即在于对CPU的使用上(任务调度)：如前文所述，进程和线程的任务调度由内核控制，是抢占式的；而协程的任务调度在用户态完成，需要在代码里显式的把CPU交给其他协程，是协作式的。</p>
-<p>由于我们可以在用户态调度协程任务，所以，我们可以把一组互相依赖的任务设计成协程。这样，当一个协程任务完成之后，可以手动进行任务调度，把自己挂起(yield)，切换到另外一个协程执行。这样，由于我们可以控制程序主动让出资源，很多情况下将不需要对资源加锁。</p>
 ]]></content>
   </entry>
   <entry>
@@ -892,6 +747,151 @@
 <p>好了，这就是有关包含块的所有内容了，你学会了么？-）</p>
 <hr>
 <p>-<em>EOF</em>-</p>
+]]></content>
+  </entry>
+  <entry>
+    <title>如何区别进程和线程、协程的关系</title>
+    <url>/bolg/2024/02/29/%E5%A6%82%E4%BD%95%E5%8C%BA%E5%88%AB%E8%BF%9B%E7%A8%8B%E5%92%8C%E7%BA%BF%E7%A8%8B%E3%80%81%E5%8D%8F%E7%A8%8B%E7%9A%84%E5%85%B3%E7%B3%BB/</url>
+    <content><![CDATA[<h2 id="进程"><a href="#进程" class="headerlink" title="进程"></a>进程</h2><h3 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h3><blockquote>
+<p>进程（Process）是计算机中的程序关于某数据集合上的一次运行活动，是系统进行资源分配和调度的基本单位，是操作系统结构的基础。在早期面向进程设计的计算机结构中，进程是程序的基本执行实体；在当代面向线程设计的计算机结构中，进程是线程的容器。程序是指令、数据及其组织形式的描述，进程是程序的实体。</p>
+</blockquote>
+<ul>
+<li>狭义定义：进程就是一段程序的执行过程例如启动的某个app。</li>
+<li>广义定义：进程是一个具有独立功能的程序关于某个数据集合的一次运行活动。它是<code>操作系统动态执行的基本单元</code>，在传统的操作系统中,进程即是基本的分配单元，也是基本的执行单元。</li>
+</ul>
+<p><code>1.进程(process)最小的资源管理单元[操作系统] 2.应用程序的启动实例，进程拥有代码和打开的文件资源、数据资源、独立的内存空间</code></p>
+<p>进程的生命周期基本由操作系统内核进行支配，即进程的创建、切换、销毁等操作都将使会陷入内核，进行系统调用。该操作消耗较大。当进行进程的销毁时，包含但不仅于内存地址空间、内核态堆栈和硬件上下文(CPU寄存器)的切换甚至在内存资源较少的情况下会将已存入内存的数据写入磁盘交换区，代价较大。因此，我们可以发现当系统运行的进程越多，系统越是卡顿。</p>
+<h3 id="特征"><a href="#特征" class="headerlink" title="特征"></a>特征</h3><ul>
+<li>每个进程都有自己的地址空间，一般情况下，包含文本区域、数据区域、堆栈</li>
+<li>进程是执行中的程序，程序是一个没有生命的实体，只有处理器赋予程序生命时，它才能成为一个活动的实体，我们称之为进程</li>
+<li>进程本身不会运行，是线程的容器。线程不能单独执行，必须组成进程</li>
+<li>一个程序至少有一个进程，一个进程至少有一个线程</li>
+<li>对于操作系统来讲，一个任务就是一个进程，比如开一个浏览器就是启动一个浏览器进程。打开一款app就是打开一个进程。</li>
+<li>有些进程还不止同时做一件事情。在一个进程内部，可以同时做多件事情，比如边看视频可以边发弹幕。</li>
+</ul>
+<h3 id="进程状态：（三状态）"><a href="#进程状态：（三状态）" class="headerlink" title="进程状态：（三状态）"></a>进程状态：（三状态）</h3><ul>
+<li>就绪：获取CPU外的所有资源、只要处理器分配资源就可以马上执行</li>
+<li>运行：获得处理器分配的资源，程序开始执行</li>
+<li>阻塞：当程序条件不够的时候，需要等待提交满足的时候才能执行。</li>
+</ul>
+<h3 id="状态详解"><a href="#状态详解" class="headerlink" title="状态详解"></a>状态详解</h3><ul>
+<li>创建状态：进程在创建时需要申请一个空白PCB，向其中填写控制和管理进程的信息，<code>完成资源分配</code>。如果创建工作无法完成，比如资源无法满足，就无法被调度运行，把此时进程所处状态称为创建状态</li>
+<li>就绪状态：进程已经准备好，<code>已分配到所需资源，只要分配到CPU就能够立即运行</code></li>
+<li>执行状态：进程<code>处于就绪状态被调度后，进程进入执行状态</code></li>
+<li>阻塞状态：正在执行的进程由于某些事件（I&#x2F;O请求，申请缓存区失败）而暂时无法运行，<code>进程受到阻塞</code>。在满足请求时进入就绪状态等待系统调用</li>
+<li>终止状态：<code>进程结束，或出现错误，或被系统终止</code>，进入终止状态。无法再执行</li>
+</ul>
+<h2 id="线程"><a href="#线程" class="headerlink" title="线程"></a>线程</h2><h3 id="定义-1"><a href="#定义-1" class="headerlink" title="定义"></a>定义</h3><blockquote>
+<p>线程（Thread）是操作系统能够进行运算调度的最小单位。它被包含在进程之中，是进程中的实际运作单位。一条线程指的是进程中一个单一顺序的控制流，一个进程中可以并发多个线程，每条线程并行执行不同的任务。在Unix System V及SunOS中也被称为轻量进程（lightweight processes），但轻量进程更多指内核线程（kernel thread），而把用户线程（user thread）称为线程。</p>
+</blockquote>
+<p><code>1.线程(thread)最小的执行单元[操作系统] 2.一个进程包含多个线程(一主多从),拥有自己的栈空间</code></p>
+<h3 id="特征-1"><a href="#特征-1" class="headerlink" title="特征"></a>特征</h3><ul>
+<li>一个进程中至少有一个线程，不然就没有存在的意义</li>
+<li>在一个进程内部，要同时干多件事情，就需要同时运行多个子任务，我们把进程内的这些子任务叫做线程</li>
+<li>多线程就是为了同步完成多项任务(在单个程序中同时运行多个线程完成不同的任务和工作)，是为了提高资源使用效率来提高系统的效率，而不是为了提高运行效率。</li>
+<li>一个简单的比喻，多线程就像是给车保养的工人有洗车工有维修有美容的，而进程就是待被清洗维护美容店车</li>
+<li>线程是程序执行流的最小单元。一个标准的线程由当前的线程ID、当前指令指针、寄存器和堆栈组成</li>
+<li>同一个进程中的多个线程之间可以并发执行</li>
+</ul>
+<h3 id="线程状态："><a href="#线程状态：" class="headerlink" title="线程状态："></a>线程状态：</h3><ul>
+<li>就绪：指线程具备运行的所有条件，逻辑上可以运行，在等待处理机</li>
+<li>运行：指线程占用处理机正在运行</li>
+<li>阻塞：线程在等待一个事件，逻辑上不可执行</li>
+</ul>
+<h3 id="进程与线程对比"><a href="#进程与线程对比" class="headerlink" title="进程与线程对比"></a>进程与线程对比</h3><ul>
+<li><p>进程是操作系统资源分配的<code>基本单位</code>，而线程是任务调度和执行的基本单位</p>
+<p>线程和进程的实现在操作系统之间有所不同，但在大多数情况下，线程是进程的一个组件。进程是操作系统资源分配的基本单位，而线程是任务调度和执行的基本单位。在操作系统中能同时运行多个进程；而在同一个进程中有多个线程同时执行（通过CPU调度，在每个时间片中只有一个线程执行）。</p>
+</li>
+<li><p>进程拥有独立的<code>内存空间</code>，线程则共享所在进程中的内存空间</p>
+<p>进程是系统中独立存在的实体，它可以拥有自己独立的资源，系统在运行的时候会为每个进程分配不同的内存空间，所以每一个进程都拥有自己私有的内存空间。在没有经过进程本身允许的情况下，一个用户的进程不可以直接访问其它进程的内存空间。而对线程而言，除了CPU外，系统不会为线程分配内存（线程所使用的资源来自其所属进程的资源），一个进程中的多个线程之间只能共享进程的资源。而不同的进程不共享这些资源。</p>
+</li>
+<li><p>进程之间切换开销较大，而线程间切换<code>开销</code>较小</p>
+<p>每个进程都有独立的数据空间（程序上下文），进程之间的切换会有较大的开销；线程可以看做轻量级的进程，同一类线程共享代码和数据空间，每个线程都有自己独立的运行栈和程序计数器（PC），线程的切换的消耗随略小于进程，较少进行内存和磁盘的交换，但是仍然会有堆栈的映射和切换。</p>
+</li>
+<li><p>程序是一个静态<code>指令的集合</code>，而进程是一个正在系统中活动的指令集合</p>
+<p>进程与程序的区别在于，程序只是一个静态的指令集合，而进程是一个正在系统中活动的指令集合。在进程中加入了时间的概念。进程具有自己的生命周期和各种不同的状态，这写概念在程序中是不具备的。</p>
+</li>
+</ul>
+<h2 id="协程"><a href="#协程" class="headerlink" title="协程"></a>协程</h2><h3 id="定义-2"><a href="#定义-2" class="headerlink" title="定义"></a>定义</h3><p>协程，又称微线程，纤程。英文名Coroutine。一句话说明什么是线程：协程是一种用户态的<strong>轻量级线程</strong>，协程的调度完全由用户控制（进程和线程都是由cpu 内核进行调度）。</p>
+<p><code>1.协程(Coroutines)特殊的函数[程序控制] 2.一个线程可以拥有多个协程 3.可以暂停执行（暂停的表达式称为暂停点) 4.可以从挂起点恢复（保留其原始参数和局部变量） 5.事件循环是异步编程的底层基石</code></p>
+<p>从名字可以看出，协程的粒度比线程更小，并且是用户管理和控制的，多个协程可以运行在一个线程上面。那么协程出现的背景又是什么呢，先来看一下目前线程中影响性能的特性：</p>
+<ul>
+<li>使用锁机制</li>
+<li>线程间的上下文切换</li>
+<li>线程运行和阻塞状态的切换</li>
+</ul>
+<p>以上任意一点都是很消耗cpu性能的。相对来说协程是由程序自身控制，没有线程切换的开销，且不需要锁机制，因为在同一个线程中运行，不存在同时写变量冲突，在协程中操作共享资源不加锁，只需要判断状态就行了，所以执行效率比线程高的多。</p>
+<h3 id="特征-2"><a href="#特征-2" class="headerlink" title="特征"></a>特征</h3><p>协程拥有自己的寄存器上下文和栈。协程调度切换时，将寄存器上下文和栈保存到其他地方，在切回来的时候，恢复先前保存的寄存器上下文和栈，直接操作栈则基本没有内核切换的开销，可以不加锁的访问全局变量，所以上下文的切换非常快。因此：协程能保留上一次调用时的状态（即所有局部状态的一个特定组合），每次过程重入时，就相当于进入上一次调用的状态，换种说法：进入上一次离开时所处逻辑流的位置。</p>
+<ul>
+<li><p>对于 协程(用户级线程)，这是对内核透明的，也就是系统并不知道有协程的存在，是完全由用户自己的程序进行调度的，因为是由用户程序自己控制，那么就很难像抢占式调度那样做到强制的 CPU 控制权切换到其他进程&#x2F;线程，通常只能进行 协作式调度，需要协程自己主动把控制权转让出去之后，其他协程才能被执行到。</p>
+</li>
+<li><p>对于 进程、线程，都是有内核进行调度，有 CPU 时间片的概念，进行 抢占式调度（有多种调度算法）</p>
+</li>
+</ul>
+<h3 id="协程的优点："><a href="#协程的优点：" class="headerlink" title="协程的优点："></a>协程的优点：</h3><ol>
+<li>无需线程上下文切换的开销，goroutine(协程) 切换调度开销方面远比线程小。</li>
+<li>无需原子操作锁定及同步的开销</li>
+<li>方便切换控制流，简化编程模型</li>
+<li>每个 goroutine (协程) 默认占用内存远比 Java 、C 的线程少。goroutine：2KB（官方），线程：8MB（参考网络）</li>
+</ol>
+<p>高并发+高扩展性+低成本：一个CPU支持上万的协程都不是问题。所以很适合用于高并发处理。</p>
+<h3 id="协程的缺点："><a href="#协程的缺点：" class="headerlink" title="协程的缺点："></a>协程的缺点：</h3><ol>
+<li>无法利用多核资源：协程的本质是个单线程,它不能同时将 单个CPU 的多个核用上,协程需要和进程配合才能运行在多CPU上.当然我们日常所编写的绝大部分应用都没有这个必要，除非是cpu密集型应用。</li>
+<li>进行阻塞（Blocking）操作（如IO时）会阻塞掉整个程序</li>
+</ol>
+<p><strong>CPU密集型代码(各种循环处理、计算等等)：使用多进程。IO密集型代码(文件处理、网络爬虫等)：使用多线程</strong></p>
+<h2 id="并发与并行"><a href="#并发与并行" class="headerlink" title="并发与并行"></a><strong>并发与并行</strong></h2><h3 id="并发"><a href="#并发" class="headerlink" title="并发"></a>并发</h3><p>并发：在操作系统中，某一时间段，几个程序在同一个CPU上运行，但在任意一个时间点上，只有一个程序在CPU上运行。</p>
+<p>当有多个线程时，如果系统只有一个CPU，那么CPU不可能真正同时进行多个线程，CPU的运行时间会被划分成若干个时间段，每个时间段分配给各个线程去执行，一个时间段里某个线程运行时，其他线程处于挂起状态，这就是并发。并发解决了程序排队等待的问题，如果一个程序发生阻塞，其他程序仍然可以正常执行。</p>
+<h3 id="并行"><a href="#并行" class="headerlink" title="并行"></a>并行</h3><p>并行：当操作系统有多个CPU时，一个CPU处理A线程，另一个CPU处理B线程，两个线程互相不抢占CPU资源，可以同时进行，这种方式成为并行。</p>
+<h3 id="并发与并行的区别"><a href="#并发与并行的区别" class="headerlink" title="并发与并行的区别"></a>并发与并行的区别</h3><ol>
+<li>并发只是在宏观上给人感觉有多个程序在同时运行，但在实际的单CPU系统中，每一时刻只有一个程序在运行，微观上这些程序是分时交替执行。</li>
+<li>在多CPU系统中，将这些并发执行的程序分配到不同的CPU上处理，每个CPU用来处理一个程序，这样多个程序便可以实现同时执行。</li>
+</ol>
+<p>知乎上高赞例子：</p>
+<ul>
+<li>你吃饭吃到一半，电话来了，你一直到吃完了以后才去接，这就说明你不支持并发也不支持并行。</li>
+<li>你吃饭吃到一半，电话来了，你停了下来接了电话，接完后继续吃饭，这说明你支持并发。</li>
+<li>你吃饭吃到一半，电话来了，你一边打电话一边吃饭，这说明你支持并行。</li>
+</ul>
+<p>并发的关键是你有处理多个任务的能力，不一定要同时。并行的关键是你有同时处理多个任务的能力。所以我认为它们最关键的点就是：是否是 <strong>『同时』</strong>。</p>
+<h2 id="JavaScript中的协程"><a href="#JavaScript中的协程" class="headerlink" title="JavaScript中的协程"></a>JavaScript中的协程</h2><h3 id="JavaScript-协程的发展"><a href="#JavaScript-协程的发展" class="headerlink" title="JavaScript 协程的发展"></a>JavaScript 协程的发展</h3><ul>
+<li>同步代码</li>
+<li>异步JavaScript: callback hell（回调地狱）</li>
+<li>ES6引入 Promise&#x2F;a+, 生成器Generators(语法 _<em>function</em> foo(){}_*  可以赋予函数执行暂停&#x2F;保存上下文&#x2F;恢复执行状态的功能), 新关键词yield使生成器函数暂停.</li>
+<li>ES7引入 async函数&#x2F;await语法糖,async可以声明一个异步函数(将Generator函数和自动执行器，包装在一个函数里)，此函数需要返回一个 Promise 对象。await 可以等待一个 Promise 对象 resolve，并拿到结果,</li>
+</ul>
+<p>Promise中也利用了回调函数。在then和catch方法中都传入了一个回调函数，分别在Promise被满足和被拒绝时执行, 这样就就能让它能够被链接起来完成一系列任务。总之就是把层层嵌套的 callback 变成 .then().then()…，从而使代码编写和阅读更直观</p>
+<p>生成器Generator的底层实现机制是协程Coroutine。</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">function</span>* <span class="title function_">foo</span>(<span class="params"></span>) &#123;     <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;foo start&quot;</span>)     a = <span class="keyword">yield</span> <span class="number">1</span>;     <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;foo a&quot;</span>, a)     <span class="keyword">yield</span> <span class="number">2</span>;     <span class="keyword">yield</span> <span class="number">3</span>;     <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;foo end&quot;</span>) &#125; <span class="keyword">const</span> gen = <span class="title function_">foo</span>(); <span class="variable language_">console</span>.<span class="title function_">log</span>(gen.<span class="title function_">next</span>().<span class="property">value</span>); <span class="comment">// 1 // gen.send(&quot;a&quot;) // http://www.voidcn.com/article/p-syzbwqht-bvv.html SpiderMonkey引擎支持 send 语法 console.log(gen.next().value); // 2 console.log(gen.next().value); // 3 console.log(foo().next().value); // 1 console.log(foo().next().value); // 1 /* foo start 1 foo a undefined 2 3 foo start 1 foo start 1 */</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="JavaScript-协程成熟体"><a href="#JavaScript-协程成熟体" class="headerlink" title="JavaScript 协程成熟体"></a>JavaScript 协程成熟体</h3><h4 id="Promise继续使用"><a href="#Promise继续使用" class="headerlink" title="Promise继续使用"></a>Promise继续使用</h4><p>Promise 本质是一个状态机，用于表示一个异步操作的最终完成 (或失败), 及其结果值。它有三个状态：</p>
+<ul>
+<li>pending: 初始状态，既不是成功，也不是失败状态。</li>
+<li>fulfilled: 意味着操作成功完成。</li>
+<li>rejected: 意味着操作失败。</li>
+</ul>
+<p>最终 Promise 会有两种状态，一种成功，一种失败，当 pending 变化的时候，Promise 对象会根据最终的状态调用不同的处理函数。</p>
+<h4 id="async、await语法糖"><a href="#async、await语法糖" class="headerlink" title="async、await语法糖"></a>async、await语法糖</h4><p>async、await 是对 Generator 和 Promise 组合的封装, 使原先的异步代码在形式上更接近同步代码的写法,并且对错误处理&#x2F;条件分支&#x2F;异常堆栈&#x2F;调试等操作更友好。Async、Await 实现了 Generator 的自动迭代，正因为 Async、Await 是对 Generator 和 Promise 组合的封装，所以 Async 和 Await 基本上就只能用来实现异步和并发了，而不具有协程的其他作用。</p>
+<h3 id="JavaScript-异步执行的运行机制"><a href="#JavaScript-异步执行的运行机制" class="headerlink" title="JavaScript 异步执行的运行机制"></a>JavaScript 异步执行的运行机制</h3><ol>
+<li>所有任务都在主线程上执行，形成一个执行栈。\</li>
+<li>主线程之外，还存在一个”任务队列”（task queue）。只要异步任务有了运行结果，就在”任务队列”之中放置一个事件。\</li>
+<li>一旦”执行栈”中的所有同步任务执行完毕，系统就会读取”任务队列”。那些对应的异步任务，结束等待状态，进入执行栈并开始执行。</li>
+</ol>
+<p>遇到同步任务直接执行,遇到异步任务分类为宏任务(macro-task)和微任务(micro-task)。<br>当前执行栈执行完毕时会立刻先处理所有微任务队列中的事件，然后再去宏任务队列中取出一个事件。同一次事件循环中，微任务永远在宏任务之前执行。</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> sleep = <span class="keyword">function</span> (<span class="params">time</span>) &#123;     <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;sleep start&quot;</span>)     <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Promise</span>(<span class="keyword">function</span> (<span class="params">resolve, reject</span>) &#123;         <span class="built_in">setTimeout</span>(<span class="keyword">function</span> (<span class="params"></span>) &#123;             <span class="title function_">resolve</span>();         &#125;, time);     &#125;); &#125;; <span class="keyword">async</span> <span class="keyword">function</span> <span class="title function_">exec</span>(<span class="params"></span>) &#123;     <span class="keyword">await</span> <span class="title function_">sleep</span>(<span class="number">2000</span>);     <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;sleep end&quot;</span>) &#125; <span class="keyword">async</span> <span class="keyword">function</span> <span class="title function_">go</span>(<span class="params"></span>) &#123;     <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="title class_">Date</span>.<span class="title function_">now</span>())     c1 = <span class="title function_">exec</span>()     <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;-------1&quot;</span>)     c2 = <span class="title function_">exec</span>()     <span class="variable language_">console</span>.<span class="title function_">log</span>(c1, c2)     <span class="keyword">await</span> c1;     <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;-------2&quot;</span>)     <span class="keyword">await</span> c2;     <span class="variable language_">console</span>.<span class="title function_">log</span>(c1, c2)     <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="title class_">Date</span>.<span class="title function_">now</span>()) &#125; <span class="title function_">go</span>();</span><br></pre></td></tr></table></figure>
+
+<h3 id="event-loop将任务划分："><a href="#event-loop将任务划分：" class="headerlink" title="event loop将任务划分："></a>event loop将任务划分：</h3><ul>
+<li>主线程循环从”任务队列”中读取事件</li>
+<li>宏队列（macro task）js同步执行的代码块，setTimeout、setInterval、XMLHttprequest、setImmediate、I&#x2F;O、UI rendering等, 本质是参与了事件循环的任务.</li>
+<li>微队列（micro task）Promise、process.nextTick（node环境）、Object.observe, MutationObserver等,本质是直接在 Javascript 引擎中的执行的没有参与事件循环的任务.</li>
+</ul>
+<h2 id="最佳实践"><a href="#最佳实践" class="headerlink" title="最佳实践"></a><strong>最佳实践</strong></h2><ol>
+<li>线程和协程推荐在IO密集型的任务(比如网络调用)中使用，而在CPU密集型的任务中，表现较差。</li>
+<li>对于CPU密集型的任务，则需要多个进程，绕开GIL的限制，利用所有可用的CPU核心，提高效率。</li>
+<li>所以大并发下的最佳实践就是多进程+协程，既充分利用多核，又充分发挥协程的高效率，可获得极高的性能。</li>
+</ol>
+<p>总结：进程、线程和协程的设计，都是为了并发任务能够更好的利用CPU资源，他们最大的区别即在于对CPU的使用上(任务调度)：如前文所述，进程和线程的任务调度由内核控制，是抢占式的；而协程的任务调度在用户态完成，需要在代码里显式的把CPU交给其他协程，是协作式的。</p>
+<p>由于我们可以在用户态调度协程任务，所以，我们可以把一组互相依赖的任务设计成协程。这样，当一个协程任务完成之后，可以手动进行任务调度，把自己挂起(yield)，切换到另外一个协程执行。这样，由于我们可以控制程序主动让出资源，很多情况下将不需要对资源加锁。</p>
 ]]></content>
   </entry>
   <entry>
