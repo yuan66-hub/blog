@@ -78,6 +78,144 @@
 ]]></content>
   </entry>
   <entry>
+    <title>事件循环</title>
+    <url>/bolg/2023/02/16/%E4%BA%8B%E4%BB%B6%E5%BE%AA%E7%8E%AF/</url>
+    <content><![CDATA[<h2 id="浏览器的进程模型"><a href="#浏览器的进程模型" class="headerlink" title="浏览器的进程模型"></a>浏览器的进程模型</h2><h3 id="何为进程？"><a href="#何为进程？" class="headerlink" title="何为进程？"></a>何为进程？</h3><p>程序运行需要有它自己专属的内存空间，可以把这块内存空间简单的理解为进程</p>
+<p><img src="/bolg/./images/loopEvent/img_01.png" alt="内存与进程的关系"></p>
+<p>每个应用至少有一个进程，进程之间相互独立，即使要通信，也需要双方同意。</p>
+<h3 id="何为线程？"><a href="#何为线程？" class="headerlink" title="何为线程？"></a>何为线程？</h3><p>有了进程后，就可以运行程序的代码了。</p>
+<p>运行代码的「人」称之为「线程」。</p>
+<p>一个进程至少有一个线程，所以在进程开启后会自动创建一个线程来运行代码，该线程称之为主线程。</p>
+<p>如果程序需要同时执行多块代码，主线程就会启动更多的线程来执行代码，所以一个进程中可以包含多个线程。</p>
+<p><img src="/bolg/./images/loopEvent/img_02.png" alt="何为线程"></p>
+<h3 id="浏览器有哪些进程和线程？"><a href="#浏览器有哪些进程和线程？" class="headerlink" title="浏览器有哪些进程和线程？"></a>浏览器有哪些进程和线程？</h3><p><strong>浏览器是一个多进程多线程的应用程序</strong></p>
+<p>浏览器内部工作极其复杂。</p>
+<p>为了避免相互影响，为了减少连环崩溃的几率，当启动浏览器后，它会自动启动多个进程。</p>
+<p><img src="/bolg/./images/loopEvent/img_03.png" alt="进程和线程"></p>
+<blockquote>
+<p>可以在浏览器的任务管理器中查看当前的所有进程</p>
+</blockquote>
+<p>其中，最主要的进程有：</p>
+<ol>
+<li><p>浏览器进程</p>
+<p>主要负责界面显示、用户交互、子进程管理等。浏览器进程内部会启动多个线程处理不同的任务。</p>
+</li>
+<li><p>网络进程</p>
+<p>负责加载网络资源。网络进程内部会启动多个线程来处理不同的网络任务。</p>
+</li>
+<li><p><strong>渲染进程</strong>（本节课重点讲解的进程）</p>
+<p>渲染进程启动后，会开启一个<strong>渲染主线程</strong>，主线程负责执行 HTML、CSS、JS 代码。</p>
+<p>默认情况下，浏览器会为每个标签页开启一个新的渲染进程，以保证不同的标签页之间不相互影响。</p>
+<blockquote>
+<p>将来该默认模式可能会有所改变，有兴趣的同学可参见<a href="https://chromium.googlesource.com/chromium/src/+/main/docs/process_model_and_site_isolation.md#Modes-and-Availability">chrome官方说明文档</a></p>
+</blockquote>
+</li>
+</ol>
+<h2 id="渲染主线程是如何工作的？"><a href="#渲染主线程是如何工作的？" class="headerlink" title="渲染主线程是如何工作的？"></a>渲染主线程是如何工作的？</h2><p>渲染主线程是浏览器中最繁忙的线程，需要它处理的任务包括但不限于：</p>
+<ul>
+<li>解析 HTML</li>
+<li>解析 CSS</li>
+<li>计算样式</li>
+<li>布局</li>
+<li>处理图层</li>
+<li>每秒把页面画 60 次</li>
+<li>执行全局 JS 代码</li>
+<li>执行事件处理函数</li>
+<li>执行计时器的回调函数</li>
+<li>……</li>
+</ul>
+<blockquote>
+<p>思考题：为什么渲染进程不适用多个线程来处理这些事情？</p>
+</blockquote>
+<p>要处理这么多的任务，主线程遇到了一个前所未有的难题：如何调度任务？</p>
+<p>比如：</p>
+<ul>
+<li>我正在执行一个 JS 函数，执行到一半的时候用户点击了按钮，我该立即去执行点击事件的处理函数吗？</li>
+<li>我正在执行一个 JS 函数，执行到一半的时候某个计时器到达了时间，我该立即去执行它的回调吗？</li>
+<li>浏览器进程通知我“用户点击了按钮”，与此同时，某个计时器也到达了时间，我应该处理哪一个呢？</li>
+<li>……</li>
+</ul>
+<p>渲染主线程想出了一个绝妙的主意来处理这个问题：排队</p>
+<p><img src="/bolg/./images/loopEvent/img_04.png" alt="队列"></p>
+<ol>
+<li>在最开始的时候，渲染主线程会进入一个无限循环</li>
+<li>每一次循环会检查消息队列中是否有任务存在。如果有，就取出第一个任务执行，执行完一个后进入下一次循环；如果没有，则进入休眠状态。</li>
+<li>其他所有线程（包括其他进程的线程）可以随时向消息队列添加任务。新任务会加到消息队列的末尾。在添加新任务时，如果主线程是休眠状态，则会将其唤醒以继续循环拿取任务</li>
+</ol>
+<p>这样一来，就可以让每个任务有条不紊的、持续的进行下去了。</p>
+<p><strong>整个过程，被称之为事件循环（消息循环）</strong></p>
+<h2 id="若干解释"><a href="#若干解释" class="headerlink" title="若干解释"></a>若干解释</h2><h3 id="何为异步？"><a href="#何为异步？" class="headerlink" title="何为异步？"></a>何为异步？</h3><p>代码在执行过程中，会遇到一些无法立即处理的任务，比如：</p>
+<ul>
+<li>计时完成后需要执行的任务 —— <code>setTimeout</code>、<code>setInterval</code></li>
+<li>网络通信完成后需要执行的任务 – <code>XHR</code>、<code>Fetch</code></li>
+<li>用户操作后需要执行的任务 – <code>addEventListener</code></li>
+</ul>
+<p>如果让渲染主线程等待这些任务的时机达到，就会导致主线程长期处于「阻塞」的状态，从而导致浏览器「卡死」</p>
+<p><img src="/bolg/./images/loopEvent/img_05.png" alt="异步"></p>
+<p><strong>渲染主线程承担着极其重要的工作，无论如何都不能阻塞！</strong></p>
+<p>因此，浏览器选择<strong>异步</strong>来解决这个问题</p>
+<p><img src="/bolg/./images/loopEvent/img_06.png" alt="浏览器异步"></p>
+<p>使用异步的方式，<strong>渲染主线程永不阻塞</strong></p>
+<blockquote>
+<p>面试题：如何理解 JS 的异步？</p>
+<p>参考答案：</p>
+<p>JS是一门单线程的语言，这是因为它运行在浏览器的渲染主线程中，而渲染主线程只有一个。</p>
+<p>而渲染主线程承担着诸多的工作，渲染页面、执行 JS 都在其中运行。</p>
+<p>如果使用同步的方式，就极有可能导致主线程产生阻塞，从而导致消息队列中的很多其他任务无法得到执行。这样一来，一方面会导致繁忙的主线程白白的消耗时间，另一方面导致页面无法及时更新，给用户造成卡死现象。</p>
+<p>所以浏览器采用异步的方式来避免。具体做法是当某些任务发生时，比如计时器、网络、事件监听，主线程将任务交给其他线程去处理，自身立即结束任务的执行，转而执行后续代码。当其他线程完成时，将事先传递的回调函数包装成任务，加入到消息队列的末尾排队，等待主线程调度执行。</p>
+<p>在这种异步模式下，浏览器永不阻塞，从而最大限度的保证了单线程的流畅运行。</p>
+</blockquote>
+<h3 id="JS为何会阻碍渲染？"><a href="#JS为何会阻碍渲染？" class="headerlink" title="JS为何会阻碍渲染？"></a>JS为何会阻碍渲染？</h3><p>先看代码</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">h1</span>&gt;</span>Mr.Yuan is awesome!<span class="tag">&lt;/<span class="name">h1</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">button</span>&gt;</span>change<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">var</span> h1 = <span class="variable language_">document</span>.<span class="title function_">querySelector</span>(<span class="string">&#x27;h1&#x27;</span>);</span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">var</span> btn = <span class="variable language_">document</span>.<span class="title function_">querySelector</span>(<span class="string">&#x27;button&#x27;</span>);</span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">  <span class="comment">// 死循环指定的时间</span></span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">function</span> <span class="title function_">delay</span>(<span class="params">duration</span>) &#123;</span></span><br><span class="line"><span class="language-javascript">    <span class="keyword">var</span> start = <span class="title class_">Date</span>.<span class="title function_">now</span>();</span></span><br><span class="line"><span class="language-javascript">    <span class="keyword">while</span> (<span class="title class_">Date</span>.<span class="title function_">now</span>() - start &lt; duration) &#123;&#125;</span></span><br><span class="line"><span class="language-javascript">  &#125;</span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">  btn.<span class="property">onclick</span> = <span class="keyword">function</span> (<span class="params"></span>) &#123;</span></span><br><span class="line"><span class="language-javascript">    h1.<span class="property">textContent</span> = <span class="string">&#x27;6666&#x27;</span>;</span></span><br><span class="line"><span class="language-javascript">    <span class="title function_">delay</span>(<span class="number">3000</span>);</span></span><br><span class="line"><span class="language-javascript">  &#125;;</span></span><br><span class="line"><span class="language-javascript"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>点击按钮后，会发生什么呢？</p>
+<p>&lt;见具体演示&gt;</p>
+<h3 id="任务有优先级吗？"><a href="#任务有优先级吗？" class="headerlink" title="任务有优先级吗？"></a>任务有优先级吗？</h3><p>任务没有优先级，在消息队列中先进先出</p>
+<p>但<strong>消息队列是有优先级的</strong></p>
+<p>根据 W3C 的最新解释:</p>
+<ul>
+<li>每个任务都有一个任务类型，同一个类型的任务必须在一个队列，不同类型的任务可以分属于不同的队列。<br>在一次事件循环中，浏览器可以根据实际情况从不同的队列中取出任务执行。</li>
+<li>浏览器必须准备好一个微队列，微队列中的任务优先所有其他任务执行<br><a href="https://html.spec.whatwg.org/multipage/webappapis.html#perform-a-microtask-checkpoint">https://html.spec.whatwg.org/multipage/webappapis.html#perform-a-microtask-checkpoint</a></li>
+</ul>
+<blockquote>
+<p>随着浏览器的复杂度急剧提升，W3C 不再使用宏队列的说法</p>
+</blockquote>
+<p>在目前 chrome 的实现中，至少包含了下面的队列：</p>
+<ul>
+<li>延时队列：用于存放计时器到达后的回调任务，优先级「中」</li>
+<li>交互队列：用于存放用户操作后产生的事件处理任务，优先级「高」</li>
+<li>微队列：用户存放需要最快执行的任务，优先级「最高」</li>
+</ul>
+<blockquote>
+<p>添加任务到微队列的主要方式主要是使用 Promise、MutationObserver</p>
+<p>例如：</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 立即把一个函数添加到微队列</span></span><br><span class="line"><span class="title class_">Promise</span>.<span class="title function_">resolve</span>().<span class="title function_">then</span>(函数)</span><br></pre></td></tr></table></figure>
+</blockquote>
+<blockquote>
+<p>浏览器还有很多其他的队列，由于和我们开发关系不大，不作考虑</p>
+</blockquote>
+<blockquote>
+<p>面试题：阐述一下 JS 的事件循环</p>
+<p>参考答案：</p>
+<p>事件循环又叫做消息循环，是浏览器渲染主线程的工作方式。</p>
+<p>在 Chrome 的源码中，它开启一个不会结束的 for 循环，每次循环从消息队列中取出第一个任务执行，而其他线程只需要在合适的时候将任务加入到队列末尾即可。</p>
+<p>过去把消息队列简单分为宏队列和微队列，这种说法目前已无法满足复杂的浏览器环境，取而代之的是一种更加灵活多变的处理方式。</p>
+<p>根据 W3C 官方的解释，每个任务有不同的类型，同类型的任务必须在同一个队列，不同的任务可以属于不同的队列。不同任务队列有不同的优先级，在一次事件循环中，由浏览器自行决定取哪一个队列的任务。但浏览器必须有一个微队列，微队列的任务一定具有最高的优先级，必须优先调度执行。</p>
+</blockquote>
+<blockquote>
+<p>面试题：JS 中的计时器能做到精确计时吗？为什么？</p>
+<p>参考答案：</p>
+<p>不行，因为：</p>
+<ol>
+<li>计算机硬件没有原子钟，无法做到精确计时</li>
+<li>操作系统的计时函数本身就有少量偏差，由于 JS 的计时器最终调用的是操作系统的函数，也就携带了这些偏差</li>
+<li>按照 W3C 的标准，浏览器实现计时器时，如果嵌套层级超过 5 层，则会带有 4 毫秒的最少时间，这样在计时时间少于 4 毫秒时又带来了偏差</li>
+<li>受事件循环的影响，计时器的回调函数只能在主线程空闲时运行，因此又带来了偏差</li>
+</ol>
+</blockquote>
+]]></content>
+  </entry>
+  <entry>
     <title>Moudle 加载规则</title>
     <url>/bolg/2024/03/04/Moudle-%E5%8A%A0%E8%BD%BD%E8%A7%84%E5%88%99/</url>
     <content><![CDATA[<h1 id="浏览器加载"><a href="#浏览器加载" class="headerlink" title="浏览器加载"></a>浏览器加载</h1><h2 id="传统方法"><a href="#传统方法" class="headerlink" title="传统方法"></a>传统方法</h2><p>HTML 网页中，浏览器通过<code>&lt;script&gt;</code>标签加载 JavaScript 脚本。</p>
@@ -395,144 +533,6 @@
 
 <p>上面代码中，<code>even.js</code>加载<code>odd.js</code>，而<code>odd.js</code>又去加载<code>even.js</code>，形成“循环加载”。这时，执行引擎就会输出<code>even.js</code>已经执行的部分（不存在任何结果），所以在<code>odd.js</code>之中，变量<code>even</code>等于<code>undefined</code>，等到后面调用<code>even(n - 1)</code>就会报错。</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ node</span><br><span class="line">&gt; var m = require(<span class="string">&#x27;./even&#x27;</span>);</span><br><span class="line">&gt; m.even(10)</span><br><span class="line">TypeError: even is not a <span class="keyword">function</span></span><br></pre></td></tr></table></figure>]]></content>
-  </entry>
-  <entry>
-    <title>事件循环</title>
-    <url>/bolg/2023/02/16/%E4%BA%8B%E4%BB%B6%E5%BE%AA%E7%8E%AF/</url>
-    <content><![CDATA[<h2 id="浏览器的进程模型"><a href="#浏览器的进程模型" class="headerlink" title="浏览器的进程模型"></a>浏览器的进程模型</h2><h3 id="何为进程？"><a href="#何为进程？" class="headerlink" title="何为进程？"></a>何为进程？</h3><p>程序运行需要有它自己专属的内存空间，可以把这块内存空间简单的理解为进程</p>
-<p><img src="/bolg/./images/loopEvent/img_01.png" alt="内存与进程的关系"></p>
-<p>每个应用至少有一个进程，进程之间相互独立，即使要通信，也需要双方同意。</p>
-<h3 id="何为线程？"><a href="#何为线程？" class="headerlink" title="何为线程？"></a>何为线程？</h3><p>有了进程后，就可以运行程序的代码了。</p>
-<p>运行代码的「人」称之为「线程」。</p>
-<p>一个进程至少有一个线程，所以在进程开启后会自动创建一个线程来运行代码，该线程称之为主线程。</p>
-<p>如果程序需要同时执行多块代码，主线程就会启动更多的线程来执行代码，所以一个进程中可以包含多个线程。</p>
-<p><img src="/bolg/./images/loopEvent/img_02.png" alt="何为线程"></p>
-<h3 id="浏览器有哪些进程和线程？"><a href="#浏览器有哪些进程和线程？" class="headerlink" title="浏览器有哪些进程和线程？"></a>浏览器有哪些进程和线程？</h3><p><strong>浏览器是一个多进程多线程的应用程序</strong></p>
-<p>浏览器内部工作极其复杂。</p>
-<p>为了避免相互影响，为了减少连环崩溃的几率，当启动浏览器后，它会自动启动多个进程。</p>
-<p><img src="/bolg/./images/loopEvent/img_03.png" alt="进程和线程"></p>
-<blockquote>
-<p>可以在浏览器的任务管理器中查看当前的所有进程</p>
-</blockquote>
-<p>其中，最主要的进程有：</p>
-<ol>
-<li><p>浏览器进程</p>
-<p>主要负责界面显示、用户交互、子进程管理等。浏览器进程内部会启动多个线程处理不同的任务。</p>
-</li>
-<li><p>网络进程</p>
-<p>负责加载网络资源。网络进程内部会启动多个线程来处理不同的网络任务。</p>
-</li>
-<li><p><strong>渲染进程</strong>（本节课重点讲解的进程）</p>
-<p>渲染进程启动后，会开启一个<strong>渲染主线程</strong>，主线程负责执行 HTML、CSS、JS 代码。</p>
-<p>默认情况下，浏览器会为每个标签页开启一个新的渲染进程，以保证不同的标签页之间不相互影响。</p>
-<blockquote>
-<p>将来该默认模式可能会有所改变，有兴趣的同学可参见<a href="https://chromium.googlesource.com/chromium/src/+/main/docs/process_model_and_site_isolation.md#Modes-and-Availability">chrome官方说明文档</a></p>
-</blockquote>
-</li>
-</ol>
-<h2 id="渲染主线程是如何工作的？"><a href="#渲染主线程是如何工作的？" class="headerlink" title="渲染主线程是如何工作的？"></a>渲染主线程是如何工作的？</h2><p>渲染主线程是浏览器中最繁忙的线程，需要它处理的任务包括但不限于：</p>
-<ul>
-<li>解析 HTML</li>
-<li>解析 CSS</li>
-<li>计算样式</li>
-<li>布局</li>
-<li>处理图层</li>
-<li>每秒把页面画 60 次</li>
-<li>执行全局 JS 代码</li>
-<li>执行事件处理函数</li>
-<li>执行计时器的回调函数</li>
-<li>……</li>
-</ul>
-<blockquote>
-<p>思考题：为什么渲染进程不适用多个线程来处理这些事情？</p>
-</blockquote>
-<p>要处理这么多的任务，主线程遇到了一个前所未有的难题：如何调度任务？</p>
-<p>比如：</p>
-<ul>
-<li>我正在执行一个 JS 函数，执行到一半的时候用户点击了按钮，我该立即去执行点击事件的处理函数吗？</li>
-<li>我正在执行一个 JS 函数，执行到一半的时候某个计时器到达了时间，我该立即去执行它的回调吗？</li>
-<li>浏览器进程通知我“用户点击了按钮”，与此同时，某个计时器也到达了时间，我应该处理哪一个呢？</li>
-<li>……</li>
-</ul>
-<p>渲染主线程想出了一个绝妙的主意来处理这个问题：排队</p>
-<p><img src="/bolg/./images/loopEvent/img_04.png" alt="队列"></p>
-<ol>
-<li>在最开始的时候，渲染主线程会进入一个无限循环</li>
-<li>每一次循环会检查消息队列中是否有任务存在。如果有，就取出第一个任务执行，执行完一个后进入下一次循环；如果没有，则进入休眠状态。</li>
-<li>其他所有线程（包括其他进程的线程）可以随时向消息队列添加任务。新任务会加到消息队列的末尾。在添加新任务时，如果主线程是休眠状态，则会将其唤醒以继续循环拿取任务</li>
-</ol>
-<p>这样一来，就可以让每个任务有条不紊的、持续的进行下去了。</p>
-<p><strong>整个过程，被称之为事件循环（消息循环）</strong></p>
-<h2 id="若干解释"><a href="#若干解释" class="headerlink" title="若干解释"></a>若干解释</h2><h3 id="何为异步？"><a href="#何为异步？" class="headerlink" title="何为异步？"></a>何为异步？</h3><p>代码在执行过程中，会遇到一些无法立即处理的任务，比如：</p>
-<ul>
-<li>计时完成后需要执行的任务 —— <code>setTimeout</code>、<code>setInterval</code></li>
-<li>网络通信完成后需要执行的任务 – <code>XHR</code>、<code>Fetch</code></li>
-<li>用户操作后需要执行的任务 – <code>addEventListener</code></li>
-</ul>
-<p>如果让渲染主线程等待这些任务的时机达到，就会导致主线程长期处于「阻塞」的状态，从而导致浏览器「卡死」</p>
-<p><img src="/bolg/./images/loopEvent/img_05.png" alt="异步"></p>
-<p><strong>渲染主线程承担着极其重要的工作，无论如何都不能阻塞！</strong></p>
-<p>因此，浏览器选择<strong>异步</strong>来解决这个问题</p>
-<p><img src="/bolg/./images/loopEvent/img_06.png" alt="浏览器异步"></p>
-<p>使用异步的方式，<strong>渲染主线程永不阻塞</strong></p>
-<blockquote>
-<p>面试题：如何理解 JS 的异步？</p>
-<p>参考答案：</p>
-<p>JS是一门单线程的语言，这是因为它运行在浏览器的渲染主线程中，而渲染主线程只有一个。</p>
-<p>而渲染主线程承担着诸多的工作，渲染页面、执行 JS 都在其中运行。</p>
-<p>如果使用同步的方式，就极有可能导致主线程产生阻塞，从而导致消息队列中的很多其他任务无法得到执行。这样一来，一方面会导致繁忙的主线程白白的消耗时间，另一方面导致页面无法及时更新，给用户造成卡死现象。</p>
-<p>所以浏览器采用异步的方式来避免。具体做法是当某些任务发生时，比如计时器、网络、事件监听，主线程将任务交给其他线程去处理，自身立即结束任务的执行，转而执行后续代码。当其他线程完成时，将事先传递的回调函数包装成任务，加入到消息队列的末尾排队，等待主线程调度执行。</p>
-<p>在这种异步模式下，浏览器永不阻塞，从而最大限度的保证了单线程的流畅运行。</p>
-</blockquote>
-<h3 id="JS为何会阻碍渲染？"><a href="#JS为何会阻碍渲染？" class="headerlink" title="JS为何会阻碍渲染？"></a>JS为何会阻碍渲染？</h3><p>先看代码</p>
-<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">h1</span>&gt;</span>Mr.Yuan is awesome!<span class="tag">&lt;/<span class="name">h1</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">button</span>&gt;</span>change<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">var</span> h1 = <span class="variable language_">document</span>.<span class="title function_">querySelector</span>(<span class="string">&#x27;h1&#x27;</span>);</span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">var</span> btn = <span class="variable language_">document</span>.<span class="title function_">querySelector</span>(<span class="string">&#x27;button&#x27;</span>);</span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">  <span class="comment">// 死循环指定的时间</span></span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">function</span> <span class="title function_">delay</span>(<span class="params">duration</span>) &#123;</span></span><br><span class="line"><span class="language-javascript">    <span class="keyword">var</span> start = <span class="title class_">Date</span>.<span class="title function_">now</span>();</span></span><br><span class="line"><span class="language-javascript">    <span class="keyword">while</span> (<span class="title class_">Date</span>.<span class="title function_">now</span>() - start &lt; duration) &#123;&#125;</span></span><br><span class="line"><span class="language-javascript">  &#125;</span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">  btn.<span class="property">onclick</span> = <span class="keyword">function</span> (<span class="params"></span>) &#123;</span></span><br><span class="line"><span class="language-javascript">    h1.<span class="property">textContent</span> = <span class="string">&#x27;6666&#x27;</span>;</span></span><br><span class="line"><span class="language-javascript">    <span class="title function_">delay</span>(<span class="number">3000</span>);</span></span><br><span class="line"><span class="language-javascript">  &#125;;</span></span><br><span class="line"><span class="language-javascript"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
-
-<p>点击按钮后，会发生什么呢？</p>
-<p>&lt;见具体演示&gt;</p>
-<h3 id="任务有优先级吗？"><a href="#任务有优先级吗？" class="headerlink" title="任务有优先级吗？"></a>任务有优先级吗？</h3><p>任务没有优先级，在消息队列中先进先出</p>
-<p>但<strong>消息队列是有优先级的</strong></p>
-<p>根据 W3C 的最新解释:</p>
-<ul>
-<li>每个任务都有一个任务类型，同一个类型的任务必须在一个队列，不同类型的任务可以分属于不同的队列。<br>在一次事件循环中，浏览器可以根据实际情况从不同的队列中取出任务执行。</li>
-<li>浏览器必须准备好一个微队列，微队列中的任务优先所有其他任务执行<br><a href="https://html.spec.whatwg.org/multipage/webappapis.html#perform-a-microtask-checkpoint">https://html.spec.whatwg.org/multipage/webappapis.html#perform-a-microtask-checkpoint</a></li>
-</ul>
-<blockquote>
-<p>随着浏览器的复杂度急剧提升，W3C 不再使用宏队列的说法</p>
-</blockquote>
-<p>在目前 chrome 的实现中，至少包含了下面的队列：</p>
-<ul>
-<li>延时队列：用于存放计时器到达后的回调任务，优先级「中」</li>
-<li>交互队列：用于存放用户操作后产生的事件处理任务，优先级「高」</li>
-<li>微队列：用户存放需要最快执行的任务，优先级「最高」</li>
-</ul>
-<blockquote>
-<p>添加任务到微队列的主要方式主要是使用 Promise、MutationObserver</p>
-<p>例如：</p>
-<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="comment">// 立即把一个函数添加到微队列</span></span><br><span class="line"><span class="title class_">Promise</span>.<span class="title function_">resolve</span>().<span class="title function_">then</span>(函数)</span><br></pre></td></tr></table></figure>
-</blockquote>
-<blockquote>
-<p>浏览器还有很多其他的队列，由于和我们开发关系不大，不作考虑</p>
-</blockquote>
-<blockquote>
-<p>面试题：阐述一下 JS 的事件循环</p>
-<p>参考答案：</p>
-<p>事件循环又叫做消息循环，是浏览器渲染主线程的工作方式。</p>
-<p>在 Chrome 的源码中，它开启一个不会结束的 for 循环，每次循环从消息队列中取出第一个任务执行，而其他线程只需要在合适的时候将任务加入到队列末尾即可。</p>
-<p>过去把消息队列简单分为宏队列和微队列，这种说法目前已无法满足复杂的浏览器环境，取而代之的是一种更加灵活多变的处理方式。</p>
-<p>根据 W3C 官方的解释，每个任务有不同的类型，同类型的任务必须在同一个队列，不同的任务可以属于不同的队列。不同任务队列有不同的优先级，在一次事件循环中，由浏览器自行决定取哪一个队列的任务。但浏览器必须有一个微队列，微队列的任务一定具有最高的优先级，必须优先调度执行。</p>
-</blockquote>
-<blockquote>
-<p>面试题：JS 中的计时器能做到精确计时吗？为什么？</p>
-<p>参考答案：</p>
-<p>不行，因为：</p>
-<ol>
-<li>计算机硬件没有原子钟，无法做到精确计时</li>
-<li>操作系统的计时函数本身就有少量偏差，由于 JS 的计时器最终调用的是操作系统的函数，也就携带了这些偏差</li>
-<li>按照 W3C 的标准，浏览器实现计时器时，如果嵌套层级超过 5 层，则会带有 4 毫秒的最少时间，这样在计时时间少于 4 毫秒时又带来了偏差</li>
-<li>受事件循环的影响，计时器的回调函数只能在主线程空闲时运行，因此又带来了偏差</li>
-</ol>
-</blockquote>
-]]></content>
   </entry>
   <entry>
     <title>你不知道的 CSS 之包含块</title>
@@ -941,6 +941,39 @@
 ]]></content>
   </entry>
   <entry>
+    <title>深入理解防抖和节流</title>
+    <url>/bolg/2024/03/01/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E9%98%B2%E6%8A%96%E5%92%8C%E8%8A%82%E6%B5%81/</url>
+    <content><![CDATA[<h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><p><code>防抖</code>和<code>节流</code>是前端开发中常用的函数优化手段，它们可以限制函数的执行频率，提升性能和用户体验。主要用于处理高频触发的事件，例如：用户的滚动、输入、点击和表单的重复提交等。</p>
+<h1 id="防抖与节流的区别"><a href="#防抖与节流的区别" class="headerlink" title="防抖与节流的区别"></a>防抖与节流的区别</h1><p>先简单描述下它们的作用</p>
+<ul>
+<li><p>防抖：如果一个函数持续地、频繁地触发，那么只在它结束后过一段时间才开始执行。换句话说，如果你持续触发事件，那么防抖函数将不会执行，只有当你停止触发事件后，它才会在指定的延迟时间后执行。这对于防止例如用户在输入框中连续输入时发送过多的Ajax请求等情况非常有用。</p>
+</li>
+<li><p>节流：如果你持续触发事件，每隔一段时间，事件处理函数只执行一次。这有助于限制一些处理函数的执行频率，例如：滚动事件、窗口大小调整事件等。</p>
+</li>
+</ul>
+<p>简而言之，防抖是在事件停止触发后延迟执行函数，而节流是按照固定的时间间隔执行函数。</p>
+<p>因为<code>防抖</code>和<code>节流</code>的作用和应用场景基本相同，也就导致它们容易被混淆。</p>
+<h2 id="防抖的实现与使用"><a href="#防抖的实现与使用" class="headerlink" title="防抖的实现与使用"></a><strong>防抖的实现与使用</strong></h2><p>防抖的应用场景：</p>
+<ol>
+<li>输入框搜索：当用户在搜索框中输入关键字时，使用防抖可以避免频繁发送搜索请求，而是在用户停止输入一段时间后才发送请求，减轻服务器压力。</li>
+<li>按钮点击：当用户点击按钮时，使用防抖可以避免用户多次点击造成的多次提交或重复操作。</li>
+</ol>
+<p>实现防抖的基本方式是利用定时器，每次触发事件时都清除上一次的定时器，然后重新设置一个新的定时器。</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;!DOCTYPE <span class="keyword">html</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">html</span> <span class="attr">lang</span>=<span class="string">&quot;en&quot;</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">head</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">meta</span> <span class="attr">charset</span>=<span class="string">&quot;UTF-8&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">meta</span> <span class="attr">name</span>=<span class="string">&quot;viewport&quot;</span> <span class="attr">content</span>=<span class="string">&quot;width=device-width, initial-scale=1.0&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">title</span>&gt;</span>Document<span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">button</span> <span class="attr">id</span>=<span class="string">&quot;btn&quot;</span>&gt;</span>按钮<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">       </span></span><br><span class="line"><span class="language-javascript">        <span class="comment">// 防抖函数  </span></span></span><br><span class="line"><span class="language-javascript">        <span class="keyword">function</span> <span class="title function_">debounce</span>(<span class="params">func, wait</span>) &#123;  </span></span><br><span class="line"><span class="language-javascript">            <span class="keyword">let</span> timeout;  </span></span><br><span class="line"><span class="language-javascript">            <span class="keyword">return</span> <span class="keyword">function</span> (<span class="params">...args</span>) &#123;  </span></span><br><span class="line"><span class="language-javascript">                <span class="keyword">const</span> context = <span class="variable language_">this</span>;  </span></span><br><span class="line"><span class="language-javascript">                <span class="built_in">clearTimeout</span>(timeout);  </span></span><br><span class="line"><span class="language-javascript">                timeout = <span class="built_in">setTimeout</span>(<span class="function">() =&gt;</span> func.<span class="title function_">apply</span>(context, args), wait);  </span></span><br><span class="line"><span class="language-javascript">            &#125;;  </span></span><br><span class="line"><span class="language-javascript">        &#125;  </span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">        <span class="comment">// 使用防抖函数控制连续触发事件的处理函数执行频率  </span></span></span><br><span class="line"><span class="language-javascript">        <span class="keyword">const</span> debouncedHandler = <span class="title function_">debounce</span>(<span class="function">() =&gt;</span> &#123;  </span></span><br><span class="line"><span class="language-javascript">            <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;Debounced event triggered&#x27;</span>);  </span></span><br><span class="line"><span class="language-javascript">        &#125;, <span class="number">500</span>);  </span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">        <span class="variable language_">document</span>.<span class="title function_">getElementById</span>(<span class="string">&#x27;btn&#x27;</span>).<span class="title function_">addEventListener</span>(<span class="string">&#x27;click&#x27;</span>,debouncedHandler)</span></span><br><span class="line"><span class="language-javascript">    </span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">html</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h1 id="节流的实现与使用"><a href="#节流的实现与使用" class="headerlink" title="节流的实现与使用"></a>节流的实现与使用</h1><p>节流的应用场景：</p>
+<ol>
+<li>页面滚动：当页面滚动时，使用节流可以限制滚动事件的触发频率，减少事件处理的次数，提高页面的响应性能。</li>
+<li>按钮点击：当用户点击按钮时，使用节流可以减少事件处理的次数，避免过于频繁的操作。</li>
+</ol>
+<p>实现节流的方式也是利用定时器，但与防抖不同的是，节流会保证在一个固定的时间间隔内至少执行一次事件处理函数。</p>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;!DOCTYPE <span class="keyword">html</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">html</span> <span class="attr">lang</span>=<span class="string">&quot;en&quot;</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">head</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">meta</span> <span class="attr">charset</span>=<span class="string">&quot;UTF-8&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">meta</span> <span class="attr">name</span>=<span class="string">&quot;viewport&quot;</span> <span class="attr">content</span>=<span class="string">&quot;width=device-width, initial-scale=1.0&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">title</span>&gt;</span>Document<span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">button</span> <span class="attr">id</span>=<span class="string">&quot;btn&quot;</span>&gt;</span>按钮<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">       </span></span><br><span class="line"><span class="language-javascript">       <span class="comment">// 节流函数  </span></span></span><br><span class="line"><span class="language-javascript">        <span class="keyword">function</span> <span class="title function_">throttle</span>(<span class="params">func, limit</span>) &#123;  </span></span><br><span class="line"><span class="language-javascript">            <span class="keyword">let</span> inThrottle;  </span></span><br><span class="line"><span class="language-javascript">            <span class="keyword">return</span> <span class="keyword">function</span> (<span class="params">...args</span>) &#123;  </span></span><br><span class="line"><span class="language-javascript">                <span class="keyword">const</span> context = <span class="variable language_">this</span>;  </span></span><br><span class="line"><span class="language-javascript">                <span class="keyword">if</span> (!inThrottle) &#123;  </span></span><br><span class="line"><span class="language-javascript">                func.<span class="title function_">apply</span>(context, args);  </span></span><br><span class="line"><span class="language-javascript">                inThrottle = <span class="literal">true</span>;  </span></span><br><span class="line"><span class="language-javascript">                <span class="built_in">setTimeout</span>(<span class="function">() =&gt;</span> inThrottle = <span class="literal">false</span>, limit);  </span></span><br><span class="line"><span class="language-javascript">                &#125;  </span></span><br><span class="line"><span class="language-javascript">            &#125;;  </span></span><br><span class="line"><span class="language-javascript">        &#125;</span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">        <span class="comment">// 使用节流函数控制连续触发事件的处理函数执行频率  </span></span></span><br><span class="line"><span class="language-javascript">        <span class="keyword">const</span> throttledHandler = <span class="title function_">throttle</span>(<span class="function">() =&gt;</span> &#123;  </span></span><br><span class="line"><span class="language-javascript">            <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;Throttled event triggered&#x27;</span>);  </span></span><br><span class="line"><span class="language-javascript">        &#125;, <span class="number">1000</span>);</span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">        <span class="variable language_">document</span>.<span class="title function_">getElementById</span>(<span class="string">&#x27;btn&#x27;</span>).<span class="title function_">addEventListener</span>(<span class="string">&#x27;click&#x27;</span>,throttledHandler)</span></span><br><span class="line"><span class="language-javascript">    </span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">html</span>&gt;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>在实际的前端开发中，防抖和节流的使用场景非常广泛。例如：搜索框的实时搜索建议可以使用防抖来减少服务器请求；滚动加载更多数据可以使用节流来防止在短时间内发送过多的请求。通过使用这两种技术，我们可以有效地优化前端的性能，提升用户体验。</p>
+<p>本文转自 <a href="https://juejin.cn/post/7324522555268366351?searchId=202403011646443E84D49F22E455869CE8">https://juejin.cn/post/7324522555268366351?searchId=202403011646443E84D49F22E455869CE8</a>，如有侵权，请联系删除。</p>
+]]></content>
+  </entry>
+  <entry>
     <title>深入理解vite原理</title>
     <url>/bolg/2024/03/06/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3vite%E5%8E%9F%E7%90%86/</url>
     <content><![CDATA[<h1 id="Vite介绍"><a href="#Vite介绍" class="headerlink" title="Vite介绍"></a>Vite介绍</h1><h2 id="Vite是什么？"><a href="#Vite是什么？" class="headerlink" title="Vite是什么？"></a>Vite是什么？</h2><p><code>Vite</code>是新一代的前端构建工具，在尤雨溪开发<code>Vue3.0</code>的时候诞生。类似于<code>Webpack</code>+ <code>Webpack-dev-server</code>。其主要利用浏览器<code>ESM</code>特性导入组织代码，在服务器端按需编译返回，完全跳过了打包这个概念，服务器随起随用。生产中利用<code>Rollup</code>作为打包工具，号称下一代的前端构建工具。</p>
@@ -1296,39 +1329,6 @@
 </li>
 </ul>
 <p><code>Vite.js</code>虽然才在构建打包场景兴起，但在很多场景下基本都会优于现有的解决方案。如果有生态、想要丰富的<code>loader</code>、<code>plugins</code>的要求可以考虑成熟的<code>Webpack</code>。在其余情况下，<code>Vite.js</code>不失为一个打包构建工具的好选择。</p>
-]]></content>
-  </entry>
-  <entry>
-    <title>深入理解防抖和节流</title>
-    <url>/bolg/2024/03/01/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E9%98%B2%E6%8A%96%E5%92%8C%E8%8A%82%E6%B5%81/</url>
-    <content><![CDATA[<h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><p><code>防抖</code>和<code>节流</code>是前端开发中常用的函数优化手段，它们可以限制函数的执行频率，提升性能和用户体验。主要用于处理高频触发的事件，例如：用户的滚动、输入、点击和表单的重复提交等。</p>
-<h1 id="防抖与节流的区别"><a href="#防抖与节流的区别" class="headerlink" title="防抖与节流的区别"></a>防抖与节流的区别</h1><p>先简单描述下它们的作用</p>
-<ul>
-<li><p>防抖：如果一个函数持续地、频繁地触发，那么只在它结束后过一段时间才开始执行。换句话说，如果你持续触发事件，那么防抖函数将不会执行，只有当你停止触发事件后，它才会在指定的延迟时间后执行。这对于防止例如用户在输入框中连续输入时发送过多的Ajax请求等情况非常有用。</p>
-</li>
-<li><p>节流：如果你持续触发事件，每隔一段时间，事件处理函数只执行一次。这有助于限制一些处理函数的执行频率，例如：滚动事件、窗口大小调整事件等。</p>
-</li>
-</ul>
-<p>简而言之，防抖是在事件停止触发后延迟执行函数，而节流是按照固定的时间间隔执行函数。</p>
-<p>因为<code>防抖</code>和<code>节流</code>的作用和应用场景基本相同，也就导致它们容易被混淆。</p>
-<h2 id="防抖的实现与使用"><a href="#防抖的实现与使用" class="headerlink" title="防抖的实现与使用"></a><strong>防抖的实现与使用</strong></h2><p>防抖的应用场景：</p>
-<ol>
-<li>输入框搜索：当用户在搜索框中输入关键字时，使用防抖可以避免频繁发送搜索请求，而是在用户停止输入一段时间后才发送请求，减轻服务器压力。</li>
-<li>按钮点击：当用户点击按钮时，使用防抖可以避免用户多次点击造成的多次提交或重复操作。</li>
-</ol>
-<p>实现防抖的基本方式是利用定时器，每次触发事件时都清除上一次的定时器，然后重新设置一个新的定时器。</p>
-<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;!DOCTYPE <span class="keyword">html</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">html</span> <span class="attr">lang</span>=<span class="string">&quot;en&quot;</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">head</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">meta</span> <span class="attr">charset</span>=<span class="string">&quot;UTF-8&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">meta</span> <span class="attr">name</span>=<span class="string">&quot;viewport&quot;</span> <span class="attr">content</span>=<span class="string">&quot;width=device-width, initial-scale=1.0&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">title</span>&gt;</span>Document<span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">button</span> <span class="attr">id</span>=<span class="string">&quot;btn&quot;</span>&gt;</span>按钮<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">       </span></span><br><span class="line"><span class="language-javascript">        <span class="comment">// 防抖函数  </span></span></span><br><span class="line"><span class="language-javascript">        <span class="keyword">function</span> <span class="title function_">debounce</span>(<span class="params">func, wait</span>) &#123;  </span></span><br><span class="line"><span class="language-javascript">            <span class="keyword">let</span> timeout;  </span></span><br><span class="line"><span class="language-javascript">            <span class="keyword">return</span> <span class="keyword">function</span> (<span class="params">...args</span>) &#123;  </span></span><br><span class="line"><span class="language-javascript">                <span class="keyword">const</span> context = <span class="variable language_">this</span>;  </span></span><br><span class="line"><span class="language-javascript">                <span class="built_in">clearTimeout</span>(timeout);  </span></span><br><span class="line"><span class="language-javascript">                timeout = <span class="built_in">setTimeout</span>(<span class="function">() =&gt;</span> func.<span class="title function_">apply</span>(context, args), wait);  </span></span><br><span class="line"><span class="language-javascript">            &#125;;  </span></span><br><span class="line"><span class="language-javascript">        &#125;  </span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">        <span class="comment">// 使用防抖函数控制连续触发事件的处理函数执行频率  </span></span></span><br><span class="line"><span class="language-javascript">        <span class="keyword">const</span> debouncedHandler = <span class="title function_">debounce</span>(<span class="function">() =&gt;</span> &#123;  </span></span><br><span class="line"><span class="language-javascript">            <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;Debounced event triggered&#x27;</span>);  </span></span><br><span class="line"><span class="language-javascript">        &#125;, <span class="number">500</span>);  </span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">        <span class="variable language_">document</span>.<span class="title function_">getElementById</span>(<span class="string">&#x27;btn&#x27;</span>).<span class="title function_">addEventListener</span>(<span class="string">&#x27;click&#x27;</span>,debouncedHandler)</span></span><br><span class="line"><span class="language-javascript">    </span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">html</span>&gt;</span></span><br></pre></td></tr></table></figure>
-
-<h1 id="节流的实现与使用"><a href="#节流的实现与使用" class="headerlink" title="节流的实现与使用"></a>节流的实现与使用</h1><p>节流的应用场景：</p>
-<ol>
-<li>页面滚动：当页面滚动时，使用节流可以限制滚动事件的触发频率，减少事件处理的次数，提高页面的响应性能。</li>
-<li>按钮点击：当用户点击按钮时，使用节流可以减少事件处理的次数，避免过于频繁的操作。</li>
-</ol>
-<p>实现节流的方式也是利用定时器，但与防抖不同的是，节流会保证在一个固定的时间间隔内至少执行一次事件处理函数。</p>
-<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="meta">&lt;!DOCTYPE <span class="keyword">html</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">html</span> <span class="attr">lang</span>=<span class="string">&quot;en&quot;</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">head</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">meta</span> <span class="attr">charset</span>=<span class="string">&quot;UTF-8&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">meta</span> <span class="attr">name</span>=<span class="string">&quot;viewport&quot;</span> <span class="attr">content</span>=<span class="string">&quot;width=device-width, initial-scale=1.0&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">title</span>&gt;</span>Document<span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">button</span> <span class="attr">id</span>=<span class="string">&quot;btn&quot;</span>&gt;</span>按钮<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">       </span></span><br><span class="line"><span class="language-javascript">       <span class="comment">// 节流函数  </span></span></span><br><span class="line"><span class="language-javascript">        <span class="keyword">function</span> <span class="title function_">throttle</span>(<span class="params">func, limit</span>) &#123;  </span></span><br><span class="line"><span class="language-javascript">            <span class="keyword">let</span> inThrottle;  </span></span><br><span class="line"><span class="language-javascript">            <span class="keyword">return</span> <span class="keyword">function</span> (<span class="params">...args</span>) &#123;  </span></span><br><span class="line"><span class="language-javascript">                <span class="keyword">const</span> context = <span class="variable language_">this</span>;  </span></span><br><span class="line"><span class="language-javascript">                <span class="keyword">if</span> (!inThrottle) &#123;  </span></span><br><span class="line"><span class="language-javascript">                func.<span class="title function_">apply</span>(context, args);  </span></span><br><span class="line"><span class="language-javascript">                inThrottle = <span class="literal">true</span>;  </span></span><br><span class="line"><span class="language-javascript">                <span class="built_in">setTimeout</span>(<span class="function">() =&gt;</span> inThrottle = <span class="literal">false</span>, limit);  </span></span><br><span class="line"><span class="language-javascript">                &#125;  </span></span><br><span class="line"><span class="language-javascript">            &#125;;  </span></span><br><span class="line"><span class="language-javascript">        &#125;</span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">        <span class="comment">// 使用节流函数控制连续触发事件的处理函数执行频率  </span></span></span><br><span class="line"><span class="language-javascript">        <span class="keyword">const</span> throttledHandler = <span class="title function_">throttle</span>(<span class="function">() =&gt;</span> &#123;  </span></span><br><span class="line"><span class="language-javascript">            <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;Throttled event triggered&#x27;</span>);  </span></span><br><span class="line"><span class="language-javascript">        &#125;, <span class="number">1000</span>);</span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">        <span class="variable language_">document</span>.<span class="title function_">getElementById</span>(<span class="string">&#x27;btn&#x27;</span>).<span class="title function_">addEventListener</span>(<span class="string">&#x27;click&#x27;</span>,throttledHandler)</span></span><br><span class="line"><span class="language-javascript">    </span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">html</span>&gt;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>在实际的前端开发中，防抖和节流的使用场景非常广泛。例如：搜索框的实时搜索建议可以使用防抖来减少服务器请求；滚动加载更多数据可以使用节流来防止在短时间内发送过多的请求。通过使用这两种技术，我们可以有效地优化前端的性能，提升用户体验。</p>
-<p>本文转自 <a href="https://juejin.cn/post/7324522555268366351?searchId=202403011646443E84D49F22E455869CE8">https://juejin.cn/post/7324522555268366351?searchId=202403011646443E84D49F22E455869CE8</a>，如有侵权，请联系删除。</p>
 ]]></content>
   </entry>
   <entry>
