@@ -1,6 +1,83 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>js如何管理内存</title>
+    <url>/bolg/2024/03/01/js%E5%A6%82%E4%BD%95%E7%AE%A1%E7%90%86%E5%86%85%E5%AD%98/</url>
+    <content><![CDATA[<h1 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h1><p>JS的内存空间分为栈(stack)、堆(heap)、池(一般也会归类为栈中)。<br>其中栈存放变量，堆存放复杂对象，池存放常量，所以也叫常量池。</p>
+<h1 id="栈数据结构"><a href="#栈数据结构" class="headerlink" title="栈数据结构"></a>栈数据结构</h1><ol>
+<li>栈是一种特殊的列表，栈内的元素只能通过列表的一端访问，这一端称为栈顶。</li>
+<li>栈被称为是一种后入先出（LIFO，last-in-first-out）的数据结构。</li>
+<li>由于栈具有后入先出的特点，所以任何不在栈顶的元素都无法访问。</li>
+<li>为了得到栈底的元素，必须先拿掉上面的元素。</li>
+</ol>
+<h1 id="堆数据结构"><a href="#堆数据结构" class="headerlink" title="堆数据结构"></a>堆数据结构</h1><ol>
+<li>堆是一种经过排序的树形数据结构，每个结点都有一个值。</li>
+<li>通常我们所说的堆的数据结构，是指二叉堆。</li>
+<li>堆的特点是根结点的值最小（或最大），且根结点的两个子树也是一个堆。</li>
+<li>由于堆的这个特性，常用来实现优先队列，堆的存取是随意</li>
+</ol>
+<p>这就如同我们在图书馆的书架上取书，虽然书的摆放是有顺序的，但是我们想取任意一本时不必像栈一样，先取出前面所有的书，我们只需要关心书的名字。</p>
+<h1 id="变量类型与内存的关系"><a href="#变量类型与内存的关系" class="headerlink" title="变量类型与内存的关系"></a>变量类型与内存的关系</h1><h2 id="基本数据类型"><a href="#基本数据类型" class="headerlink" title="基本数据类型"></a>基本数据类型</h2><p>基本数据类型共有6种：</p>
+<ol>
+<li>Sting</li>
+<li>Number</li>
+<li>Boolean</li>
+<li>null</li>
+<li>undefined</li>
+<li>Symbol</li>
+</ol>
+<blockquote>
+<p>基本数据类型保存在栈内存中，因为基本数据类型占用空间小、大小固定，通过按值来访问，属于被频繁使用的数据。</p>
+</blockquote>
+<h2 id="引用数据类型"><a href="#引用数据类型" class="headerlink" title="引用数据类型"></a>引用数据类型</h2><ol>
+<li>Array</li>
+<li>Function</li>
+<li>Object</li>
+</ol>
+<blockquote>
+<p>引用数据类型存储在堆内存中，因为引用数据类型占据空间大、大小不固定。 如果存储在栈中，将会影响程序运行的性能； 引用数据类型在栈中存储了指针，该指针指向堆中该实体的起始地址。 当解释器寻找引用值时，会首先检索其在栈中的地址，取得地址后从堆中获得实体</p>
+</blockquote>
+<h2 id="栈内存和堆内存的优缺点"><a href="#栈内存和堆内存的优缺点" class="headerlink" title="栈内存和堆内存的优缺点"></a>栈内存和堆内存的优缺点</h2><ul>
+<li>在JS中，基本数据类型变量大小固定，并且操作简单容易，所以把它们放入栈中存储。</li>
+<li>引用类型变量大小不固定，所以把它们分配给堆中，让他们申请空间的时候自己确定大小，这样把它们分开存储能够使得程序运行起来占用的内存最小。</li>
+<li>栈内存由于它的特点，所以它的系统效率较高。</li>
+<li>堆内存需要分配空间和地址，还要把地址存到栈中，所以效率低于栈。</li>
+</ul>
+<h2 id="栈内存和堆内存的垃圾回收"><a href="#栈内存和堆内存的垃圾回收" class="headerlink" title="栈内存和堆内存的垃圾回收"></a>栈内存和堆内存的垃圾回收</h2><p>栈内存中变量一般在它的当前执行环境结束就会被销毁被垃圾回收制回收， 而堆内存中的变量则不会，因为不确定其他的地方是不是还有一些对它的引用。 堆内存中的变量只有在所有对它的引用都结束的时候才会被回收。</p>
+<h2 id="闭包与堆内存"><a href="#闭包与堆内存" class="headerlink" title="闭包与堆内存"></a>闭包与堆内存</h2><p>闭包中的变量并不保存中栈内存中，而是保存在堆内存中。 这也就解释了函数调用之后之后为什么闭包还能引用到函数内的变量。举一个例子：</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">A</span>(<span class="params"></span>) &#123;</span><br><span class="line">  <span class="keyword">let</span> a = <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">function</span> <span class="title function_">B</span>(<span class="params"></span>) &#123;</span><br><span class="line">      <span class="variable language_">console</span>.<span class="title function_">log</span>(a);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> B;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">let</span> res = <span class="title function_">A</span>();</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>函数 A 弹出调用栈后，函数 A 中的变量这时候是存储在堆上的，所以函数B依旧能引用到函数A中的变量。 现在的 JS 引擎可以通过逃逸分析辨别出哪些变量需要存储在堆上，哪些需要存储在栈上。</p>
+<h1 id="深克隆和浅克隆"><a href="#深克隆和浅克隆" class="headerlink" title="深克隆和浅克隆"></a>深克隆和浅克隆</h1><h2 id="浅克隆"><a href="#浅克隆" class="headerlink" title="浅克隆"></a>浅克隆</h2><ol>
+<li>浅拷贝只复制对象的第一层属性。如果对象的属性值是基本数据类型（如String、Number、Boolean等），则直接复制值；如果属性值是引用类型（如Array、Object等），则复制其内存地址，而不是复制实际的值或嵌套的对象。以下都是浅拷贝的实现：</li>
+</ol>
+<ul>
+<li><p>Object.assign()</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> origin = &#123; <span class="attr">a</span>: <span class="string">&#x27;原始字符串&#x27;</span>, <span class="attr">b</span>: &#123; <span class="attr">c</span>: <span class="number">1</span> &#125; &#125;;</span><br><span class="line"><span class="keyword">let</span> copy = <span class="title class_">Object</span>.<span class="title function_">assign</span>(&#123;&#125;, origin);</span><br><span class="line">origin.<span class="property">a</span> = <span class="string">&#x27;改变后的字符串&#x27;</span>;</span><br><span class="line">copy.<span class="property">b</span>.<span class="property">c</span> = <span class="number">2</span>;</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(origin); <span class="comment">// &#123;a: &#x27;改变后的字符串&#x27;, b: &#123;c: 2&#125;&#125;</span></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(copy); <span class="comment">// &#123;a: &#x27;原始字符串&#x27;, b: &#123;c: 2&#125;&#125;</span></span><br></pre></td></tr></table></figure></li>
+<li><p>扩展运算符</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> origin = &#123; <span class="attr">a</span>: <span class="string">&#x27;原始字符串&#x27;</span>, <span class="attr">b</span>: &#123; <span class="attr">c</span>: <span class="number">1</span> &#125; &#125;;</span><br><span class="line"><span class="keyword">let</span> copy = &#123; ...origin &#125;;</span><br><span class="line">origin.<span class="property">a</span> = <span class="string">&#x27;改变后的字符串&#x27;</span>;</span><br><span class="line">copy.<span class="property">b</span>.<span class="property">c</span> = <span class="number">2</span>;</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(origin); <span class="comment">// &#123;a: &#x27;改变后的字符串&#x27;, b: &#123;c: 2&#125;&#125;</span></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(copy); <span class="comment">// &#123;a: &#x27;原始字符串&#x27;, b: &#123;c: 2&#125;&#125;</span></span><br></pre></td></tr></table></figure></li>
+<li><p>slice(数组)</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> origin = [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>];</span><br><span class="line"><span class="keyword">let</span> copy = origin.<span class="title function_">slice</span>();</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(copy);</span><br></pre></td></tr></table></figure></li>
+<li><p>concat</p>
+<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> original = [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>];</span><br><span class="line"><span class="keyword">let</span> copy = original.<span class="title function_">concat</span>();</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="深克隆"><a href="#深克隆" class="headerlink" title="深克隆"></a>深克隆</h2><ol start="2">
+<li>深拷贝相对于浅拷贝来说，不仅复制了对象本身及其包含的原始类型的值，还复制了所有引用类型的实际值。这意味着，如果你修改拷贝对象中的一个引用类型的值，原始对象中相应的值不会发生变化，因为它们指向了不同的内存地址。深拷贝不仅复制对象的第一层属性，还递归复制所有的嵌套对象。这意味着，无论对象有多少层嵌套，深拷贝都会创建所有层次的副本。因此，原始对象和拷贝对象之间不会相互影响。</li>
+</ol>
+<ul>
+<li><p>JSON.parse(JSON.stringify(object))</p>
+ <figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> original = &#123; <span class="attr">a</span>: <span class="number">1</span>, <span class="attr">b</span>: &#123; <span class="attr">c</span>: <span class="number">2</span> &#125; &#125;;</span><br><span class="line"><span class="keyword">let</span> copy = <span class="title class_">JSON</span>.<span class="title function_">parse</span>(<span class="title class_">JSON</span>.<span class="title function_">stringify</span>(original));</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(copy); <span class="comment">// &#123; a: 1, b: &#123; c: 2 &#125; &#125;</span></span><br><span class="line"><span class="title class_">JSON</span>.<span class="title function_">parse</span>(<span class="title class_">JSON</span>.<span class="title function_">stringify</span>(<span class="title class_">NaN</span>))  <span class="comment">// null</span></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>使用 JSON.stringify() 将对象序列化（转换为JSON字符串），然后使用 JSON.parse() 将字符串解析为新的对象。这种方法不能复制函数和循环引用的对象,undefine,Symbol,正则表达式</p>
+</blockquote>
+</li>
+<li><p>递归拷贝</p>
+ <figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">deepCopy</span>(<span class="params">obj</span>) &#123;</span><br><span class="line"><span class="keyword">if</span> (<span class="keyword">typeof</span> obj !== <span class="string">&#x27;object&#x27;</span> || obj === <span class="literal">null</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> obj;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> copy;</span><br><span class="line"><span class="keyword">if</span> (<span class="title class_">Array</span>.<span class="title function_">isArray</span>(obj)) &#123;</span><br><span class="line">    copy = [];</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; obj.<span class="property">length</span>; i++) &#123;</span><br><span class="line">        copy[i] = <span class="title function_">deepCopy</span>(obj[i]);</span><br><span class="line">    &#125;</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    copy = &#123;&#125;;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">let</span> key <span class="keyword">in</span> obj) &#123;</span><br><span class="line">            <span class="keyword">if</span> (obj.<span class="title function_">hasOwnProperty</span>(key)) &#123; <span class="comment">// 检查是否是对象自身具有的属性，因为in会包含原型链上的属性，这里只拷贝自身的！</span></span><br><span class="line">                copy[key] = <span class="title function_">deepCopy</span>(obj[key]);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> copy;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
+<li><p>使用第三方库：如Lodash的 _.cloneDeep()</p>
+ <figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> original = &#123; <span class="attr">a</span>: <span class="number">1</span>, <span class="attr">b</span>: &#123; <span class="attr">c</span>: <span class="number">2</span> &#125; &#125;;</span><br><span class="line"><span class="keyword">let</span> copy = _.<span class="title function_">cloneDeep</span>(original);</span><br></pre></td></tr></table></figure></li>
+</ul>
+]]></content>
+  </entry>
+  <entry>
     <title>Moudle 加载规则</title>
     <url>/bolg/2024/03/04/Moudle-%E5%8A%A0%E8%BD%BD%E8%A7%84%E5%88%99/</url>
     <content><![CDATA[<h1 id="浏览器加载"><a href="#浏览器加载" class="headerlink" title="浏览器加载"></a>浏览器加载</h1><h2 id="传统方法"><a href="#传统方法" class="headerlink" title="传统方法"></a>传统方法</h2><p>HTML 网页中，浏览器通过<code>&lt;script&gt;</code>标签加载 JavaScript 脚本。</p>
@@ -320,98 +397,20 @@
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">$ node</span><br><span class="line">&gt; var m = require(<span class="string">&#x27;./even&#x27;</span>);</span><br><span class="line">&gt; m.even(10)</span><br><span class="line">TypeError: even is not a <span class="keyword">function</span></span><br></pre></td></tr></table></figure>]]></content>
   </entry>
   <entry>
-    <title>js如何管理内存</title>
-    <url>/bolg/2024/03/01/js%E5%A6%82%E4%BD%95%E7%AE%A1%E7%90%86%E5%86%85%E5%AD%98/</url>
-    <content><![CDATA[<h1 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h1><p>JS的内存空间分为栈(stack)、堆(heap)、池(一般也会归类为栈中)。<br>其中栈存放变量，堆存放复杂对象，池存放常量，所以也叫常量池。</p>
-<h1 id="栈数据结构"><a href="#栈数据结构" class="headerlink" title="栈数据结构"></a>栈数据结构</h1><ol>
-<li>栈是一种特殊的列表，栈内的元素只能通过列表的一端访问，这一端称为栈顶。</li>
-<li>栈被称为是一种后入先出（LIFO，last-in-first-out）的数据结构。</li>
-<li>由于栈具有后入先出的特点，所以任何不在栈顶的元素都无法访问。</li>
-<li>为了得到栈底的元素，必须先拿掉上面的元素。</li>
-</ol>
-<h1 id="堆数据结构"><a href="#堆数据结构" class="headerlink" title="堆数据结构"></a>堆数据结构</h1><ol>
-<li>堆是一种经过排序的树形数据结构，每个结点都有一个值。</li>
-<li>通常我们所说的堆的数据结构，是指二叉堆。</li>
-<li>堆的特点是根结点的值最小（或最大），且根结点的两个子树也是一个堆。</li>
-<li>由于堆的这个特性，常用来实现优先队列，堆的存取是随意</li>
-</ol>
-<p>这就如同我们在图书馆的书架上取书，虽然书的摆放是有顺序的，但是我们想取任意一本时不必像栈一样，先取出前面所有的书，我们只需要关心书的名字。</p>
-<h1 id="变量类型与内存的关系"><a href="#变量类型与内存的关系" class="headerlink" title="变量类型与内存的关系"></a>变量类型与内存的关系</h1><h2 id="基本数据类型"><a href="#基本数据类型" class="headerlink" title="基本数据类型"></a>基本数据类型</h2><p>基本数据类型共有6种：</p>
-<ol>
-<li>Sting</li>
-<li>Number</li>
-<li>Boolean</li>
-<li>null</li>
-<li>undefined</li>
-<li>Symbol</li>
-</ol>
-<blockquote>
-<p>基本数据类型保存在栈内存中，因为基本数据类型占用空间小、大小固定，通过按值来访问，属于被频繁使用的数据。</p>
-</blockquote>
-<h2 id="引用数据类型"><a href="#引用数据类型" class="headerlink" title="引用数据类型"></a>引用数据类型</h2><ol>
-<li>Array</li>
-<li>Function</li>
-<li>Object</li>
-</ol>
-<blockquote>
-<p>引用数据类型存储在堆内存中，因为引用数据类型占据空间大、大小不固定。 如果存储在栈中，将会影响程序运行的性能； 引用数据类型在栈中存储了指针，该指针指向堆中该实体的起始地址。 当解释器寻找引用值时，会首先检索其在栈中的地址，取得地址后从堆中获得实体</p>
-</blockquote>
-<h2 id="栈内存和堆内存的优缺点"><a href="#栈内存和堆内存的优缺点" class="headerlink" title="栈内存和堆内存的优缺点"></a>栈内存和堆内存的优缺点</h2><ul>
-<li>在JS中，基本数据类型变量大小固定，并且操作简单容易，所以把它们放入栈中存储。</li>
-<li>引用类型变量大小不固定，所以把它们分配给堆中，让他们申请空间的时候自己确定大小，这样把它们分开存储能够使得程序运行起来占用的内存最小。</li>
-<li>栈内存由于它的特点，所以它的系统效率较高。</li>
-<li>堆内存需要分配空间和地址，还要把地址存到栈中，所以效率低于栈。</li>
-</ul>
-<h2 id="栈内存和堆内存的垃圾回收"><a href="#栈内存和堆内存的垃圾回收" class="headerlink" title="栈内存和堆内存的垃圾回收"></a>栈内存和堆内存的垃圾回收</h2><p>栈内存中变量一般在它的当前执行环境结束就会被销毁被垃圾回收制回收， 而堆内存中的变量则不会，因为不确定其他的地方是不是还有一些对它的引用。 堆内存中的变量只有在所有对它的引用都结束的时候才会被回收。</p>
-<h2 id="闭包与堆内存"><a href="#闭包与堆内存" class="headerlink" title="闭包与堆内存"></a>闭包与堆内存</h2><p>闭包中的变量并不保存中栈内存中，而是保存在堆内存中。 这也就解释了函数调用之后之后为什么闭包还能引用到函数内的变量。举一个例子：</p>
-<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">A</span>(<span class="params"></span>) &#123;</span><br><span class="line">  <span class="keyword">let</span> a = <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">function</span> <span class="title function_">B</span>(<span class="params"></span>) &#123;</span><br><span class="line">      <span class="variable language_">console</span>.<span class="title function_">log</span>(a);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> B;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">let</span> res = <span class="title function_">A</span>();</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>函数 A 弹出调用栈后，函数 A 中的变量这时候是存储在堆上的，所以函数B依旧能引用到函数A中的变量。 现在的 JS 引擎可以通过逃逸分析辨别出哪些变量需要存储在堆上，哪些需要存储在栈上。</p>
-<h1 id="深克隆和浅克隆"><a href="#深克隆和浅克隆" class="headerlink" title="深克隆和浅克隆"></a>深克隆和浅克隆</h1><h2 id="浅克隆"><a href="#浅克隆" class="headerlink" title="浅克隆"></a>浅克隆</h2><ol>
-<li>浅拷贝只复制对象的第一层属性。如果对象的属性值是基本数据类型（如String、Number、Boolean等），则直接复制值；如果属性值是引用类型（如Array、Object等），则复制其内存地址，而不是复制实际的值或嵌套的对象。以下都是浅拷贝的实现：</li>
-</ol>
-<ul>
-<li><p>Object.assign()</p>
-<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> origin = &#123; <span class="attr">a</span>: <span class="string">&#x27;原始字符串&#x27;</span>, <span class="attr">b</span>: &#123; <span class="attr">c</span>: <span class="number">1</span> &#125; &#125;;</span><br><span class="line"><span class="keyword">let</span> copy = <span class="title class_">Object</span>.<span class="title function_">assign</span>(&#123;&#125;, origin);</span><br><span class="line">origin.<span class="property">a</span> = <span class="string">&#x27;改变后的字符串&#x27;</span>;</span><br><span class="line">copy.<span class="property">b</span>.<span class="property">c</span> = <span class="number">2</span>;</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(origin); <span class="comment">// &#123;a: &#x27;改变后的字符串&#x27;, b: &#123;c: 2&#125;&#125;</span></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(copy); <span class="comment">// &#123;a: &#x27;原始字符串&#x27;, b: &#123;c: 2&#125;&#125;</span></span><br></pre></td></tr></table></figure></li>
-<li><p>扩展运算符</p>
-<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> origin = &#123; <span class="attr">a</span>: <span class="string">&#x27;原始字符串&#x27;</span>, <span class="attr">b</span>: &#123; <span class="attr">c</span>: <span class="number">1</span> &#125; &#125;;</span><br><span class="line"><span class="keyword">let</span> copy = &#123; ...origin &#125;;</span><br><span class="line">origin.<span class="property">a</span> = <span class="string">&#x27;改变后的字符串&#x27;</span>;</span><br><span class="line">copy.<span class="property">b</span>.<span class="property">c</span> = <span class="number">2</span>;</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(origin); <span class="comment">// &#123;a: &#x27;改变后的字符串&#x27;, b: &#123;c: 2&#125;&#125;</span></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(copy); <span class="comment">// &#123;a: &#x27;原始字符串&#x27;, b: &#123;c: 2&#125;&#125;</span></span><br></pre></td></tr></table></figure></li>
-<li><p>slice(数组)</p>
-<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> origin = [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>];</span><br><span class="line"><span class="keyword">let</span> copy = origin.<span class="title function_">slice</span>();</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(copy);</span><br></pre></td></tr></table></figure></li>
-<li><p>concat</p>
-<figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> original = [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>];</span><br><span class="line"><span class="keyword">let</span> copy = original.<span class="title function_">concat</span>();</span><br></pre></td></tr></table></figure></li>
-</ul>
-<h2 id="深克隆"><a href="#深克隆" class="headerlink" title="深克隆"></a>深克隆</h2><ol start="2">
-<li>深拷贝相对于浅拷贝来说，不仅复制了对象本身及其包含的原始类型的值，还复制了所有引用类型的实际值。这意味着，如果你修改拷贝对象中的一个引用类型的值，原始对象中相应的值不会发生变化，因为它们指向了不同的内存地址。深拷贝不仅复制对象的第一层属性，还递归复制所有的嵌套对象。这意味着，无论对象有多少层嵌套，深拷贝都会创建所有层次的副本。因此，原始对象和拷贝对象之间不会相互影响。</li>
-</ol>
-<ul>
-<li><p>JSON.parse(JSON.stringify(object))</p>
- <figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> original = &#123; <span class="attr">a</span>: <span class="number">1</span>, <span class="attr">b</span>: &#123; <span class="attr">c</span>: <span class="number">2</span> &#125; &#125;;</span><br><span class="line"><span class="keyword">let</span> copy = <span class="title class_">JSON</span>.<span class="title function_">parse</span>(<span class="title class_">JSON</span>.<span class="title function_">stringify</span>(original));</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(copy); <span class="comment">// &#123; a: 1, b: &#123; c: 2 &#125; &#125;</span></span><br><span class="line"><span class="title class_">JSON</span>.<span class="title function_">parse</span>(<span class="title class_">JSON</span>.<span class="title function_">stringify</span>(<span class="title class_">NaN</span>))  <span class="comment">// null</span></span><br></pre></td></tr></table></figure>
-<blockquote>
-<p>使用 JSON.stringify() 将对象序列化（转换为JSON字符串），然后使用 JSON.parse() 将字符串解析为新的对象。这种方法不能复制函数和循环引用的对象。</p>
-</blockquote>
-</li>
-<li><p>递归拷贝</p>
- <figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">deepCopy</span>(<span class="params">obj</span>) &#123;</span><br><span class="line"><span class="keyword">if</span> (<span class="keyword">typeof</span> obj !== <span class="string">&#x27;object&#x27;</span> || obj === <span class="literal">null</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> obj;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> copy;</span><br><span class="line"><span class="keyword">if</span> (<span class="title class_">Array</span>.<span class="title function_">isArray</span>(obj)) &#123;</span><br><span class="line">    copy = [];</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; obj.<span class="property">length</span>; i++) &#123;</span><br><span class="line">        copy[i] = <span class="title function_">deepCopy</span>(obj[i]);</span><br><span class="line">    &#125;</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    copy = &#123;&#125;;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">let</span> key <span class="keyword">in</span> obj) &#123;</span><br><span class="line">            <span class="keyword">if</span> (obj.<span class="title function_">hasOwnProperty</span>(key)) &#123; <span class="comment">// 检查是否是对象自身具有的属性，因为in会包含原型链上的属性，这里只拷贝自身的！</span></span><br><span class="line">                copy[key] = <span class="title function_">deepCopy</span>(obj[key]);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> copy;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure></li>
-<li><p>使用第三方库：如Lodash的 _.cloneDeep()</p>
- <figure class="highlight js"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> original = &#123; <span class="attr">a</span>: <span class="number">1</span>, <span class="attr">b</span>: &#123; <span class="attr">c</span>: <span class="number">2</span> &#125; &#125;;</span><br><span class="line"><span class="keyword">let</span> copy = _.<span class="title function_">cloneDeep</span>(original);</span><br></pre></td></tr></table></figure></li>
-</ul>
-]]></content>
-  </entry>
-  <entry>
     <title>事件循环</title>
     <url>/bolg/2023/02/16/%E4%BA%8B%E4%BB%B6%E5%BE%AA%E7%8E%AF/</url>
     <content><![CDATA[<h2 id="浏览器的进程模型"><a href="#浏览器的进程模型" class="headerlink" title="浏览器的进程模型"></a>浏览器的进程模型</h2><h3 id="何为进程？"><a href="#何为进程？" class="headerlink" title="何为进程？"></a>何为进程？</h3><p>程序运行需要有它自己专属的内存空间，可以把这块内存空间简单的理解为进程</p>
-<img src="http://mdrs.yuanjin.tech/img/202208092057573.png" alt="image-20220809205743532" style="zoom:50%;" />
-
+<p><img src="/bolg/./images/loopEvent/img_01.png" alt="内存与进程的关系"></p>
 <p>每个应用至少有一个进程，进程之间相互独立，即使要通信，也需要双方同意。</p>
 <h3 id="何为线程？"><a href="#何为线程？" class="headerlink" title="何为线程？"></a>何为线程？</h3><p>有了进程后，就可以运行程序的代码了。</p>
 <p>运行代码的「人」称之为「线程」。</p>
 <p>一个进程至少有一个线程，所以在进程开启后会自动创建一个线程来运行代码，该线程称之为主线程。</p>
 <p>如果程序需要同时执行多块代码，主线程就会启动更多的线程来执行代码，所以一个进程中可以包含多个线程。</p>
-<p><img src="http://mdrs.yuanjin.tech/img/202208092108499.png" alt="image-20220809210859457"></p>
+<p><img src="/bolg/./images/loopEvent/img_02.png" alt="何为线程"></p>
 <h3 id="浏览器有哪些进程和线程？"><a href="#浏览器有哪些进程和线程？" class="headerlink" title="浏览器有哪些进程和线程？"></a>浏览器有哪些进程和线程？</h3><p><strong>浏览器是一个多进程多线程的应用程序</strong></p>
 <p>浏览器内部工作极其复杂。</p>
 <p>为了避免相互影响，为了减少连环崩溃的几率，当启动浏览器后，它会自动启动多个进程。</p>
-<p><img src="http://mdrs.yuanjin.tech/img/202208092131410.png" alt="image-20220809213152371"></p>
+<p><img src="/bolg/./images/loopEvent/img_03.png" alt="进程和线程"></p>
 <blockquote>
 <p>可以在浏览器的任务管理器中查看当前的所有进程</p>
 </blockquote>
@@ -456,7 +455,7 @@
 <li>……</li>
 </ul>
 <p>渲染主线程想出了一个绝妙的主意来处理这个问题：排队</p>
-<p><img src="http://mdrs.yuanjin.tech/img/202208092230847.png" alt="image-20220809223027806"></p>
+<p><img src="/bolg/./images/loopEvent/img_04.png" alt="队列"></p>
 <ol>
 <li>在最开始的时候，渲染主线程会进入一个无限循环</li>
 <li>每一次循环会检查消息队列中是否有任务存在。如果有，就取出第一个任务执行，执行完一个后进入下一次循环；如果没有，则进入休眠状态。</li>
@@ -471,10 +470,10 @@
 <li>用户操作后需要执行的任务 – <code>addEventListener</code></li>
 </ul>
 <p>如果让渲染主线程等待这些任务的时机达到，就会导致主线程长期处于「阻塞」的状态，从而导致浏览器「卡死」</p>
-<p><img src="http://mdrs.yuanjin.tech/img/202208101043348.png" alt="image-20220810104344296"></p>
+<p><img src="/bolg/./images/loopEvent/img_05.png" alt="异步"></p>
 <p><strong>渲染主线程承担着极其重要的工作，无论如何都不能阻塞！</strong></p>
 <p>因此，浏览器选择<strong>异步</strong>来解决这个问题</p>
-<p><img src="http://mdrs.yuanjin.tech/img/202208101048899.png" alt="image-20220810104858857"></p>
+<p><img src="/bolg/./images/loopEvent/img_06.png" alt="浏览器异步"></p>
 <p>使用异步的方式，<strong>渲染主线程永不阻塞</strong></p>
 <blockquote>
 <p>面试题：如何理解 JS 的异步？</p>
@@ -486,7 +485,7 @@
 <p>在这种异步模式下，浏览器永不阻塞，从而最大限度的保证了单线程的流畅运行。</p>
 </blockquote>
 <h3 id="JS为何会阻碍渲染？"><a href="#JS为何会阻碍渲染？" class="headerlink" title="JS为何会阻碍渲染？"></a>JS为何会阻碍渲染？</h3><p>先看代码</p>
-<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">h1</span>&gt;</span>Mr.Yuan is awesome!<span class="tag">&lt;/<span class="name">h1</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">button</span>&gt;</span>change<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">var</span> h1 = <span class="variable language_">document</span>.<span class="title function_">querySelector</span>(<span class="string">&#x27;h1&#x27;</span>);</span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">var</span> btn = <span class="variable language_">document</span>.<span class="title function_">querySelector</span>(<span class="string">&#x27;button&#x27;</span>);</span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">  <span class="comment">// 死循环指定的时间</span></span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">function</span> <span class="title function_">delay</span>(<span class="params">duration</span>) &#123;</span></span><br><span class="line"><span class="language-javascript">    <span class="keyword">var</span> start = <span class="title class_">Date</span>.<span class="title function_">now</span>();</span></span><br><span class="line"><span class="language-javascript">    <span class="keyword">while</span> (<span class="title class_">Date</span>.<span class="title function_">now</span>() - start &lt; duration) &#123;&#125;</span></span><br><span class="line"><span class="language-javascript">  &#125;</span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">  btn.<span class="property">onclick</span> = <span class="keyword">function</span> (<span class="params"></span>) &#123;</span></span><br><span class="line"><span class="language-javascript">    h1.<span class="property">textContent</span> = <span class="string">&#x27;袁老师很帅！&#x27;</span>;</span></span><br><span class="line"><span class="language-javascript">    <span class="title function_">delay</span>(<span class="number">3000</span>);</span></span><br><span class="line"><span class="language-javascript">  &#125;;</span></span><br><span class="line"><span class="language-javascript"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">h1</span>&gt;</span>Mr.Yuan is awesome!<span class="tag">&lt;/<span class="name">h1</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">button</span>&gt;</span>change<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">var</span> h1 = <span class="variable language_">document</span>.<span class="title function_">querySelector</span>(<span class="string">&#x27;h1&#x27;</span>);</span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">var</span> btn = <span class="variable language_">document</span>.<span class="title function_">querySelector</span>(<span class="string">&#x27;button&#x27;</span>);</span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">  <span class="comment">// 死循环指定的时间</span></span></span><br><span class="line"><span class="language-javascript">  <span class="keyword">function</span> <span class="title function_">delay</span>(<span class="params">duration</span>) &#123;</span></span><br><span class="line"><span class="language-javascript">    <span class="keyword">var</span> start = <span class="title class_">Date</span>.<span class="title function_">now</span>();</span></span><br><span class="line"><span class="language-javascript">    <span class="keyword">while</span> (<span class="title class_">Date</span>.<span class="title function_">now</span>() - start &lt; duration) &#123;&#125;</span></span><br><span class="line"><span class="language-javascript">  &#125;</span></span><br><span class="line"><span class="language-javascript"></span></span><br><span class="line"><span class="language-javascript">  btn.<span class="property">onclick</span> = <span class="keyword">function</span> (<span class="params"></span>) &#123;</span></span><br><span class="line"><span class="language-javascript">    h1.<span class="property">textContent</span> = <span class="string">&#x27;6666&#x27;</span>;</span></span><br><span class="line"><span class="language-javascript">    <span class="title function_">delay</span>(<span class="number">3000</span>);</span></span><br><span class="line"><span class="language-javascript">  &#125;;</span></span><br><span class="line"><span class="language-javascript"></span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure>
 
 <p>点击按钮后，会发生什么呢？</p>
 <p>&lt;见具体演示&gt;</p>
@@ -965,7 +964,7 @@
 </thead>
 <tbody><tr>
 <td align="left">vite</td>
-<td align="center">NO Bundle (CJS-ESM)</td>
+<td align="center">NO Bundle (CJS&#x2F;ESM)</td>
 <td align="right">Rollup&#x2F;webpack</td>
 <td align="right">快</td>
 </tr>
