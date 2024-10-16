@@ -3,7 +3,7 @@
 ## Source: https://github.com/hexojs/hexo/
 
 # Site
-title: 前端山海经
+title: 风花雪月
 subtitle: ''
 description: '野生技术爱好者'
 keywords:
@@ -105,3 +105,12 @@ deploy:
   type: 'git'
   repo: 'git@github.com:yuan66-hub/bolg.git' # https://bitbucket.org/JohnSmith/johnsmith.bitbucket.io
   branch: master
+
+feed:
+    type: rss2
+    path: rss2.xml
+    limit: 20
+    hub:
+    content: 
+    content_limit:
+    content_limit_delim: ' '
