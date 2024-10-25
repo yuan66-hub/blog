@@ -74,7 +74,7 @@ let res = A();
 # 深克隆和浅克隆
 ## 浅克隆
 
-1. 浅拷贝只复制对象的第一层属性。如果对象的属性值是基本数据类型（如String、Number、Boolean等），则直接复制值；如果属性值是引用类型（如Array、Object等），则复制其内存地址，而不是复制实际的值或嵌套的对象。以下都是浅拷贝的实现：
+浅拷贝只复制对象的第一层属性。如果对象的属性值是基本数据类型（如String、Number、Boolean等），则直接复制值；如果属性值是引用类型（如Array、Object等），则复制其内存地址，而不是复制实际的值或嵌套的对象。以下都是浅拷贝的实现：
   - Object.assign()
   
     ```js
@@ -109,8 +109,8 @@ let res = A();
      ```
   
 ## 深克隆
-2. 深拷贝相对于浅拷贝来说，不仅复制了对象本身及其包含的原始类型的值，还复制了所有引用类型的实际值。这意味着，如果你修改拷贝对象中的一个引用类型的值，原始对象中相应的值不会发生变化，因为它们指向了不同的内存地址。深拷贝不仅复制对象的第一层属性，还递归复制所有的嵌套对象。这意味着，无论对象有多少层嵌套，深拷贝都会创建所有层次的副本。因此，原始对象和拷贝对象之间不会相互影响。
- - JSON.parse(JSON.stringify(object))
+深拷贝相对于浅拷贝来说，不仅复制了对象本身及其包含的原始类型的值，还复制了所有引用类型的实际值。这意味着，如果你修改拷贝对象中的一个引用类型的值，原始对象中相应的值不会发生变化，因为它们指向了不同的内存地址。深拷贝不仅复制对象的第一层属性，还递归复制所有的嵌套对象。这意味着，无论对象有多少层嵌套，深拷贝都会创建所有层次的副本。因此，原始对象和拷贝对象之间不会相互影响。
+- JSON.parse(JSON.stringify(object))
  ```js
    let original = { a: 1, b: { c: 2 } };
    let copy = JSON.parse(JSON.stringify(original));
@@ -120,30 +120,128 @@ let res = A();
  > 使用 JSON.stringify() 将对象序列化（转换为JSON字符串），然后使用 JSON.parse() 将字符串解析为新的对象。这种方法不能复制函数和循环引用的对象,undefine,Symbol,正则表达式
  
 - 递归拷贝
-   ```js
-    function deepCopy(obj) {
-    if (typeof obj !== 'object' || obj === null) {
-        return obj;
-    }
+递归拷贝特殊场景需要考虑有以下几点：
+1. 数组和对象的处理
+2. Symbol类型的处理
+- 普通 Symbol `Symbol()`
+- 带有描述的 Symbol `Symbol('key')`
+- 全局Symbol `Symbol.for('key')`
+3. 循环引用的处理
+```js
+ const obj  = {
+    self: null
+ }
+ obj.self= obj
+```
+4. 函数的处理
+ - 箭头函数`()=>{}`
+ - 生成器函数`fn*`
+ - 普通函数`function`
+ - 异步函数`async fn`
+5. Map，Set，Arguments的处理
+6. setter和getter处理
 
-    let copy;
-    if (Array.isArray(obj)) {
-        copy = [];
-        for (let i = 0; i < obj.length; i++) {
-            copy[i] = deepCopy(obj[i]);
-        }
-    } else {
-        copy = {};
-        for (let key in obj) {
-                if (obj.hasOwnProperty(key)) { // 检查是否是对象自身具有的属性，因为in会包含原型链上的属性，这里只拷贝自身的！
-                    copy[key] = deepCopy(obj[key]);
-                }
-            }
-        }
-        return copy;
-    }
 
-   ```
+完整代码如下：
+   
+  ```js
+      // 分辨特殊类型
+      const getType = (obj) => Object.prototype.toString.call(obj);
+      // 判断函数类型
+      const functionMap = {
+        "[object Function]": true,
+        "[object AsyncFunction]": true,
+        "[object GeneratorFunction]": true,
+      };
+        
+      // clone 函数
+      function createFunction(fn) {
+        let cloneFn = null;
+        eval(`cloneFn=${fn.toString().replace(/get/, () => "function")}`);
+
+        return cloneFn;
+      }
+      function cloneSymbol(s) {
+        // 判断全局共享 symbol
+        const key = Symbol.keyFor(s);
+        if (key) return Symbol.for(key);
+        // 判断带有描述的 symbol
+        const desc = s.description;
+        if (desc) return Symbol(desc);
+        // 普通 symbol
+        return Symbol();
+      }
+      // 筛选出能够被遍历的类型
+      const canTranverse = {
+        "[object Map]": true,
+        "[object Set]": true,
+        "[object Arguments]": true
+      };
+
+      function deepCopy(obj, map = new WeakMap()) {
+      if (typeof obj !== 'object' || obj === null) {
+          return typeof origin === "symbol"
+          ? cloneSymbol(obj)
+          // 增加对函数类型的判断
+          : functionMap[getType(obj)] // 函数的处理
+          ? createFunction(obj)
+          : obj;
+      }
+
+
+      // 特殊类型的处理 
+      if(canTranverse[getType(obj)]) return new obj.constructor(obj)
+      // 利用WeakMap存储旧引用地址映射新引用地址
+      if (map.has(obj)) return map.get(obj);
+      // 获取 obj 构造函数初始化值
+      const copy = new obj.constructor()
+      map.set(origin, target);
+
+
+
+
+
+      if (Array.isArray(obj)) {
+          for (let i = 0; i < obj.length; i++) {
+              copy[i] = deepCopy(obj[i], map);
+          }
+      } else  {
+          for (let key in obj) {
+                  if (obj.hasOwnProperty(key)) {
+                          // setter和getter处理
+                          const get = Object.getOwnPropertyDescriptor(obj, key).get;
+                          const set = Object.getOwnPropertyDescriptor(obj, key).get;
+                          if(get){
+                            const fn = createFunction(get);
+                            //只读不可写
+                            Object.defineProperty(obj, key, {
+                              get: fn,
+                            });
+                          }
+                          if(set){
+                            const fn = createFunction(set);
+                              //只写不可读
+                            Object.defineProperty(obj, key, {
+                              set: fn,
+                            });
+                          }
+                        
+                    // 检查是否是对象自身具有的属性，因为in会包含原型链上的属性，这里只拷贝自身的！
+                      copy[key] = deepCopy(obj[key], map);
+                  }
+          }
+      }
+        // 获取当前源对象的symbol属性数组
+        const symbols = Object.getOwnPropertySymbols(obj);
+        symbols.forEach((s) => {
+          copy[cloneSymbol(s)] = deepCopy(obj[s], map);
+        });
+
+
+          return copy;
+      }
+  ```
+    
 - 使用第三方库：如Lodash的 _.cloneDeep()
  ```js
     let original = { a: 1, b: { c: 2 } };
